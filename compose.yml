@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inventory
+    ports:
+      - "3000:3000"
+    env_file:
+      - ".env"
+    volumes:
+      - ./inventory.db:/app/inventory.db
+    restart: unless-stopped
+
+  # apache:
+  #   image: httpd:alpine
+  #   container_name: inventory_apache
+  #   ports:
+  #     - "${APACHE_PORT:-80}:80"
+  #   environment:
+  #     - ENABLE_APACHE=${ENABLE_APACHE:-false}
+  #   volumes:
+  #     - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+  #     - ./apache/entrypoint.sh:/usr/local/bin/entrypoint.sh
+  #   entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped

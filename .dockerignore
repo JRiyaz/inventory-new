@@ -1,0 +1,13 @@
+.git
+node_modules
+.venv
+.angular
+dist
+*.log
+*.db
+.env
+__pycache__
+.ruff_cache
+.vscode
+.idea
+.pnpm-store
