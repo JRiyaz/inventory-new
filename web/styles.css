@@ -1,0 +1,15 @@
+/* Global project styles */
+@import "tailwindcss";
+@import "./theme-base.css";
+@import "./design-system.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: var(--theme-primary);
+  --color-primary-hover: var(--theme-primary-hover);
+  --color-dark-base: var(--theme-dark-base);
+  --color-dark-surface: var(--theme-dark-surface);
+  --color-dark-elevated: var(--theme-dark-elevated);
+  --color-dark-card: var(--theme-dark-card);
+}

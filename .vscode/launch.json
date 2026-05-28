@@ -3,6 +3,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "UV run",
+      "type": "debugpy",
+      "request": "launch",
+      // "module": "uv",
+      // "args": ["run", "run.py", "--reload"],
+      "envFile": "${workspaceFolder}/.env",
+      "program": "run.py",
+      // "args": ["--reload"],
+      "console": "internalConsole",
+      "cwd": "${workspaceFolder}"
+    },
+    {
       "name": "ng serve",
       "type": "chrome",
       "request": "launch",

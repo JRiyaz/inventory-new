@@ -1,6 +1,6 @@
 echo "Running backend (Ruff)..."
-uv run ruff check inventory --fix
-uv run ruff format inventory
+uv run ruff check . --fix
+uv run ruff format .
 
 echo "Running frontend (Biome)..."
-pnpm biome check src --write
+pnpm biome check . --write

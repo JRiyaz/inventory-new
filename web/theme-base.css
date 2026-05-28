@@ -1,0 +1,100 @@
+/* 
+   Shared Theme Base
+   Contains global design tokens and basic library overrides (Scrollbars, etc.)
+*/
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-duration: 500ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Faster transitions for interactive states to maintain snappiness */
+  button,
+  a,
+  [role="button"],
+  .interactive {
+    transition-duration: 200ms;
+  }
+
+  :root {
+    --theme-primary: #6d74ff;
+    --theme-primary-rgb: 109, 116, 255;
+    --theme-primary-hover: #5a61e6;
+    --theme-dark-base: #060714;
+    --theme-dark-surface: #0a0b21;
+    --theme-dark-elevated: #111333;
+    --theme-dark-card: #181b45;
+  }
+
+  :root[data-theme="emerald"] {
+    --theme-primary: #10b981;
+    --theme-primary-rgb: 16, 185, 129;
+    --theme-primary-hover: #059669;
+    --theme-dark-base: #020d0a;
+    --theme-dark-surface: #041a14;
+    --theme-dark-elevated: #06241c;
+    --theme-dark-card: #083328;
+  }
+
+  :root[data-theme="rose"] {
+    --theme-primary: #f43f5e;
+    --theme-primary-rgb: 244, 63, 94;
+    --theme-primary-hover: #e11d48;
+    --theme-dark-base: #0d0408;
+    --theme-dark-surface: #1a0811;
+    --theme-dark-elevated: #260c19;
+    --theme-dark-card: #351123;
+  }
+
+  :root[data-theme="obsidian"] {
+    --theme-primary: #a855f7;
+    --theme-primary-rgb: 168, 85, 247;
+    --theme-primary-hover: #9333ea;
+    --theme-dark-base: #080511;
+    --theme-dark-surface: #100a21;
+    --theme-dark-elevated: #180f31;
+    --theme-dark-card: #221545;
+  }
+
+  :root[data-theme="gold"] {
+    --theme-primary: #d4af37;
+    --theme-primary-rgb: 212, 175, 55;
+    --theme-primary-hover: #f1c40f;
+    --theme-dark-base: #14120a;
+    --theme-dark-surface: #1c190e;
+    --theme-dark-elevated: #282414;
+    --theme-dark-card: #35301b;
+  }
+
+  :root[data-theme="glass"] {
+    --theme-primary: #6d74ff;
+    --theme-primary-rgb: 109, 116, 255;
+    --theme-primary-hover: #5a61e6;
+    --theme-dark-base: #060714;
+    --theme-dark-surface: #0a0b21;
+    --theme-dark-elevated: #111333;
+    --theme-dark-card: #181b45;
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--theme-primary), transparent 80%);
+    border-radius: 10px;
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--theme-primary), transparent 80%) transparent;
+  }
+}

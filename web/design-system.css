@@ -1,0 +1,907 @@
+/* 
+   Shared Design System Components
+   This file contains PURELY CUSTOM premium components and animations.
+   (Base theme tokens and library overrides are in theme-base.css)
+*/
+
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: var(--theme-primary);
+  --color-dark-base: var(--theme-dark-base);
+  --color-dark-surface: var(--theme-dark-surface);
+  --color-dark-elevated: var(--theme-dark-elevated);
+  --color-dark-card: var(--theme-dark-card);
+}
+
+@layer components {
+  /* Premium Floating Label Input (Bottom Border Only) */
+  .floating-input-group {
+    position: relative;
+    padding-top: 0.85rem;
+    width: 100%;
+  }
+
+  .floating-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid color-mix(in srgb, currentColor, transparent 90%);
+    border-radius: 0;
+    padding: 0.4rem 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    box-shadow: none;
+  }
+
+  .floating-input:hover,
+  .floating-input:focus,
+  .floating-input:active {
+    border-bottom-color: var(--theme-primary);
+  }
+
+  .floating-label {
+    position: absolute;
+    top: 1.25rem;
+    left: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: color-mix(in srgb, currentColor, transparent 50%);
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .floating-input:focus ~ .floating-label,
+  .floating-input:not(:placeholder-shown) ~ .floating-label {
+    top: 0;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: var(--theme-primary);
+    letter-spacing: 0.1em;
+  }
+
+  .floating-select {
+    appearance: none;
+    cursor: pointer;
+  }
+
+  /* Global Premium Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-dropdown-in {
+    animation: dropdownIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes dropdownIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+      scale: 0.95;
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      scale: 1;
+    }
+  }
+
+  /* Shared Premium UI Classes */
+  .btn-primary-premium {
+    @apply px-4 py-2 bg-primary text-white rounded-lg font-bold text-[10px] uppercase tracking-wider hover:bg-primary-hover active:scale-95 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary-premium {
+    @apply px-4 py-2 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-lg font-bold text-[10px] uppercase tracking-wider border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition-all duration-200;
+  }
+
+  .btn-ghost-premium {
+    @apply px-3 py-1.5 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg active:scale-95 transition-all duration-200 text-[10px] font-black uppercase tracking-widest;
+  }
+
+  .card-premium {
+    @apply bg-white dark:bg-dark-surface border border-slate-200 dark:border-white/[0.08] rounded-xl shadow-sm;
+  }
+
+  .label-premium {
+    @apply text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 px-1;
+  }
+
+  .heading-premium {
+    @apply text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight;
+  }
+
+  .hover-tilt {
+    @apply transition-all duration-300 hover:scale-[1.01] hover:-rotate-[0.5deg];
+  }
+}
+
+.dots-wave {
+  @apply flex items-center gap-1 h-4;
+}
+
+.dots-wave span {
+  @apply w-1.5 h-1.5 bg-current rounded-full;
+  animation: dotsWave calc(1.4s / var(--loader-speed, 1)) infinite ease-in-out both;
+}
+
+.dots-wave span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dots-wave span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes dotsWave {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+    opacity: 0.3;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* btn-loading removed - use lib-loader component instead */
+
+/* /* Shared Button Styles */
+
+/* Jitter-inspired Circular Loader (Replaces Fluent/Windows) */
+.windows-loader {
+  @apply relative w-8 h-8 flex items-center justify-center;
+  animation: jitterContainer calc(4s / var(--loader-speed, 1)) infinite ease-in-out;
+}
+
+.windows-loader span {
+  @apply absolute w-1.5 h-1.5 bg-current rounded-full;
+  animation: jitterPulse calc(4s / var(--loader-speed, 1)) infinite ease-in-out;
+}
+
+.windows-loader span:nth-child(1) {
+  transform: rotate(0deg) translateY(-12px);
+  animation-delay: calc(0s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(2) {
+  transform: rotate(45deg) translateY(-12px);
+  animation-delay: calc(0.1s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(3) {
+  transform: rotate(90deg) translateY(-12px);
+  animation-delay: calc(0.2s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(4) {
+  transform: rotate(135deg) translateY(-12px);
+  animation-delay: calc(0.3s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(5) {
+  transform: rotate(180deg) translateY(-12px);
+  animation-delay: calc(0.4s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(6) {
+  transform: rotate(225deg) translateY(-12px);
+  animation-delay: calc(0.5s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(7) {
+  transform: rotate(270deg) translateY(-12px);
+  animation-delay: calc(0.6s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(8) {
+  transform: rotate(315deg) translateY(-12px);
+  animation-delay: calc(0.7s / var(--loader-speed, 1));
+}
+
+@keyframes jitterContainer {
+  0%,
+  100% {
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+@keyframes jitterPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.4);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(0.3);
+    opacity: 0.4;
+    filter: blur(1px);
+  }
+  75% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+@keyframes btnSpinner {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Flower Loader Animation */
+.flower-loader {
+  @apply relative w-4 h-4 flex items-center justify-center;
+}
+
+.flower-loader span {
+  @apply absolute w-1 h-1 bg-primary rounded-full;
+  animation: flowerScale calc(1s / var(--loader-speed, 1)) infinite ease-in-out;
+}
+
+.flower-loader span:nth-child(1) {
+  transform: rotate(0deg) translateY(-6px);
+  animation-delay: 0s;
+}
+
+.flower-loader span:nth-child(2) {
+  transform: rotate(60deg) translateY(-6px);
+  animation-delay: 0.1s;
+}
+
+.flower-loader span:nth-child(3) {
+  transform: rotate(120deg) translateY(-6px);
+  animation-delay: 0.2s;
+}
+
+.flower-loader span:nth-child(4) {
+  transform: rotate(180deg) translateY(-6px);
+  animation-delay: 0.3s;
+}
+
+.flower-loader span:nth-child(5) {
+  transform: rotate(240deg) translateY(-6px);
+  animation-delay: 0.4s;
+}
+
+.flower-loader span:nth-child(6) {
+  transform: rotate(300deg) translateY(-6px);
+  animation-delay: 0.5s;
+}
+
+@keyframes flowerScale {
+  0%,
+  100% {
+    transform: scale(1) translate(0, -6px);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(0.4) translate(0, 0);
+    opacity: 0.2;
+  }
+}
+
+.loader-wrapper-premium {
+  @apply absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px] transition-all duration-300;
+}
+
+/* Gravity Orbit Animation */
+.gravity-orbit {
+  @apply relative w-5 h-5 flex items-center justify-center;
+}
+
+.gravity-orbit span {
+  @apply absolute w-1.5 h-1.5 bg-primary rounded-full;
+  filter: blur(0.5px);
+}
+
+.gravity-orbit span:nth-child(1) {
+  animation: gravityOrbit1 calc(1.5s / var(--loader-speed, 1)) infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.gravity-orbit span:nth-child(2) {
+  animation: gravityOrbit2 calc(1.5s / var(--loader-speed, 1)) infinite cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+@keyframes gravityOrbit1 {
+  0% {
+    transform: rotate(0deg) translateX(8px) scale(1);
+    opacity: 1;
+    z-index: 2;
+  }
+
+  50% {
+    transform: rotate(180deg) translateX(8px) scale(0.6);
+    opacity: 0.5;
+    z-index: 1;
+  }
+
+  100% {
+    transform: rotate(360deg) translateX(8px) scale(1);
+    opacity: 1;
+    z-index: 2;
+  }
+}
+
+@keyframes gravityOrbit2 {
+  0% {
+    transform: rotate(0deg) translateX(-8px) scale(0.6);
+    opacity: 0.5;
+    z-index: 1;
+  }
+
+  50% {
+    transform: rotate(180deg) translateX(-8px) scale(1);
+    opacity: 1;
+    z-index: 2;
+  }
+
+  100% {
+    transform: rotate(360deg) translateX(-8px) scale(0.6);
+    opacity: 0.5;
+    z-index: 1;
+  }
+}
+
+@keyframes gravitySpin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Liquid Pulse Animation */
+.liquid-pulse {
+  @apply relative w-5 h-5 bg-primary rounded-full;
+  animation: liquidPulse calc(1.2s / var(--loader-speed, 1)) infinite ease-in-out;
+}
+
+.liquid-pulse::before,
+.liquid-pulse::after {
+  content: "";
+  @apply absolute inset-0 bg-primary rounded-full opacity-50;
+  animation: liquidPulse calc(1.2s / var(--loader-speed, 1)) infinite ease-in-out;
+}
+
+.liquid-pulse::after {
+  animation-delay: calc(0.6s / var(--loader-speed, 1));
+}
+
+@keyframes liquidPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Pulse Rings Animation */
+.pulse-rings {
+  @apply relative w-5 h-5 flex items-center justify-center;
+}
+
+.pulse-rings span {
+  @apply absolute border-2 border-primary rounded-full;
+  animation: pulseRing calc(1.5s / var(--loader-speed, 1)) infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.pulse-rings span:nth-child(1) {
+  width: 100%;
+  height: 100%;
+  animation-delay: 0s;
+}
+
+.pulse-rings span:nth-child(2) {
+  width: 100%;
+  height: 100%;
+  animation-delay: calc(0.5s / var(--loader-speed, 1));
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.1);
+    opacity: 1;
+  }
+
+  80%,
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.bloom-loader {
+  @apply relative;
+  width: 2.2em;
+  height: 2.2em;
+}
+
+.bloom-loader span {
+  @apply absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-current;
+  transform-origin: center 1.1em;
+  opacity: 0;
+  animation:
+    bloomRotate calc(6s / var(--loader-speed, 1)) infinite cubic-bezier(0.4, 0, 0.2, 1),
+    flowerPetals calc(3s / var(--loader-speed, 1)) infinite ease-in-out;
+}
+
+.bloom-loader span:nth-child(1) {
+  animation-delay: calc(0.2s / var(--loader-speed, 1));
+}
+
+.bloom-loader span:nth-child(2) {
+  animation-delay: calc(0.4s / var(--loader-speed, 1));
+}
+
+.bloom-loader span:nth-child(3) {
+  animation-delay: calc(0.6s / var(--loader-speed, 1));
+}
+
+.bloom-loader span:nth-child(4) {
+  animation-delay: calc(0.8s / var(--loader-speed, 1));
+}
+
+.bloom-loader span:nth-child(5) {
+  animation-delay: calc(1s / var(--loader-speed, 1));
+}
+
+.bloom-loader span:nth-child(6) {
+  animation-delay: calc(1.2s / var(--loader-speed, 1));
+}
+
+@keyframes bloomRotate {
+  0% {
+    transform: rotate(0deg) translate(-50%, 0);
+    opacity: 0;
+  }
+
+  5% {
+    opacity: 1;
+  }
+
+  30% {
+    transform: rotate(360deg) translate(-50%, 0);
+  }
+
+  60% {
+    transform: rotate(720deg) translate(-50%, 0);
+  }
+
+  90% {
+    transform: rotate(1080deg) translate(-50%, 0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(1080deg) translate(-50%, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes flowerPetals {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 currentColor,
+      3.5px 0 0 currentColor,
+      -3.5px 0 0 currentColor,
+      0 3.5px 0 currentColor,
+      0 -3.5px 0 currentColor,
+      2.5px 2.5px 0 currentColor,
+      -2.5px -2.5px 0 currentColor,
+      2.5px -2.5px 0 currentColor,
+      -2.5px 2.5px 0 currentColor;
+  }
+
+  35% {
+    box-shadow:
+      0 0 0 currentColor,
+      1.5px 0 0 currentColor,
+      -1.5px 0 0 currentColor,
+      0 1.5px 0 currentColor,
+      0 -1.5px 0 currentColor,
+      1px 1px 0 currentColor,
+      -1px -1px 0 currentColor,
+      1px -1px 0 currentColor,
+      -1px 1px 0 currentColor;
+  }
+
+  50%,
+  70% {
+    box-shadow:
+      0 0 0 currentColor,
+      0px 0 0 currentColor,
+      -0px 0 0 currentColor,
+      0 0px 0 currentColor,
+      0 -0px 0 currentColor,
+      0px 0px 0 currentColor,
+      -0px -0px 0 currentColor,
+      0px -0px 0 currentColor,
+      -0px 0px 0 currentColor;
+  }
+}
+
+/* Jitter-inspired Morphing Loader (Renamed to Bloom) */
+@keyframes jitterRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes jitterMorph {
+  0%,
+  100% {
+    transform: scale(0.4);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.jitter-loader {
+  position: relative;
+  width: 1.5em;
+  height: 1.5em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: jitterRotate calc(1.5s / var(--loader-speed, 1)) steps(8) infinite;
+}
+
+.jitter-loader span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18%;
+  height: 18%;
+  margin-top: -9%;
+  margin-left: -9%;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.jitter-loader span::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: jitterMorph calc(0.8s / var(--loader-speed, 1)) ease-in-out infinite;
+}
+
+.jitter-loader span:nth-child(1) {
+  transform: rotate(0deg) translateY(-160%);
+  animation-delay: calc(0s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(2) {
+  transform: rotate(45deg) translateY(-160%);
+  animation-delay: calc(0.1s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(3) {
+  transform: rotate(90deg) translateY(-160%);
+  animation-delay: calc(0.2s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(4) {
+  transform: rotate(135deg) translateY(-160%);
+  animation-delay: calc(0.3s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(5) {
+  transform: rotate(180deg) translateY(-160%);
+  animation-delay: calc(0.4s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(6) {
+  transform: rotate(225deg) translateY(-160%);
+  animation-delay: calc(0.5s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(7) {
+  transform: rotate(270deg) translateY(-160%);
+  animation-delay: calc(0.6s / var(--loader-speed, 1));
+}
+.jitter-loader span:nth-child(8) {
+  transform: rotate(315deg) translateY(-160%);
+  animation-delay: calc(0.7s / var(--loader-speed, 1));
+}
+
+/* Windows / Fluent Style Loader (Updated to Jitter Motion) */
+.windows-loader {
+  position: relative;
+  width: 1.5em;
+  height: 1.5em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  animation: jitterRotate calc(1.5s / var(--loader-speed, 1)) steps(8) infinite;
+}
+
+.windows-loader span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 18%;
+  height: 18%;
+  margin-top: -9%;
+  margin-left: -9%;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.windows-loader span::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: jitterMorph calc(0.8s / var(--loader-speed, 1)) ease-in-out infinite;
+}
+
+.windows-loader span:nth-child(1) {
+  transform: rotate(0deg) translateY(-160%);
+  animation-delay: calc(0s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(2) {
+  transform: rotate(45deg) translateY(-160%);
+  animation-delay: calc(0.1s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(3) {
+  transform: rotate(90deg) translateY(-160%);
+  animation-delay: calc(0.2s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(4) {
+  transform: rotate(135deg) translateY(-160%);
+  animation-delay: calc(0.3s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(5) {
+  transform: rotate(180deg) translateY(-160%);
+  animation-delay: calc(0.4s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(6) {
+  transform: rotate(225deg) translateY(-160%);
+  animation-delay: calc(0.5s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(7) {
+  transform: rotate(270deg) translateY(-160%);
+  animation-delay: calc(0.6s / var(--loader-speed, 1));
+}
+.windows-loader span:nth-child(8) {
+  transform: rotate(315deg) translateY(-160%);
+  animation-delay: calc(0.7s / var(--loader-speed, 1));
+}
+
+/* Flower Loader */
+.flower-loader {
+  @apply relative;
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.flower-loader span {
+  @apply absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-current opacity-0;
+  transform-origin: center 0.75em;
+  animation: flowerRotate calc(3s / var(--loader-speed, 1)) infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flower-loader span:nth-child(1) {
+  animation-delay: calc(0.1s / var(--loader-speed, 1));
+}
+
+.flower-loader span:nth-child(2) {
+  animation-delay: calc(0.2s / var(--loader-speed, 1));
+}
+
+.flower-loader span:nth-child(3) {
+  animation-delay: calc(0.3s / var(--loader-speed, 1));
+}
+
+.flower-loader span:nth-child(4) {
+  animation-delay: calc(0.4s / var(--loader-speed, 1));
+}
+
+.flower-loader span:nth-child(5) {
+  animation-delay: calc(0.5s / var(--loader-speed, 1));
+}
+
+.flower-loader span:nth-child(6) {
+  animation-delay: calc(0.6s / var(--loader-speed, 1));
+}
+
+@keyframes flowerRotate {
+  0% {
+    transform: rotate(0deg) translate(-50%, 0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: rotate(360deg) translate(-50%, 0);
+    opacity: 0;
+  }
+}
+
+/* 
+  Glassmorphism Theme Support (Minimalist Pure Glass Edition)
+  ---------------------------------------------------------
+  Clean, high-density glass look with no background distractions.
+*/
+
+:root[data-theme="glass"] {
+  --glass-bg-light: rgba(255, 255, 255, 0.45);
+  --glass-bg-dark: rgba(15, 23, 42, 0.45);
+  --glass-border-light: rgba(255, 255, 255, 0.4);
+  --glass-border-dark: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(32px) saturate(150%);
+  --glass-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="glass"],
+:root[data-theme="glass"] body {
+  overflow: hidden; /* Lock to viewport height */
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Background - Pure solid for maximum clarity */
+:root[data-theme="glass"] body {
+  background: #f8fafc;
+}
+
+:root[data-theme="glass"].dark body {
+  background: #020617;
+}
+
+/* Clear any previous background elements */
+:root[data-theme="glass"] body::before,
+:root[data-theme="glass"] body::after {
+  display: none;
+}
+
+/* Unified Shell Panels (Seamless, No Borders) */
+:root[data-theme="glass"] .topnav-header,
+:root[data-theme="glass"] .sidebar-aside,
+:root[data-theme="glass"] .main-content-wrapper {
+  background: var(--glass-bg-light);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: none; /* Unified seamless look */
+  box-shadow: none; /* Eliminate gaps */
+}
+
+:root[data-theme="glass"].dark .topnav-header,
+:root[data-theme="glass"].dark .sidebar-aside,
+:root[data-theme="glass"].dark .main-content-wrapper {
+  background: var(--glass-bg-dark);
+}
+
+/* Remove shell layout gaps and rounding in Glass mode */
+:root[data-theme="glass"] .main-content-wrapper {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  overflow-y: auto;
+}
+
+:root[data-theme="glass"].dark header,
+:root[data-theme="glass"].dark .sidebar-aside,
+:root[data-theme="glass"].dark .main-content-wrapper {
+  background: var(--glass-bg-dark);
+}
+
+/* Pure Glass Cards (Maintain subtle borders for definition) */
+:root[data-theme="glass"] .card-premium,
+:root[data-theme="glass"] .bg-white,
+:root[data-theme="glass"] .bg-slate-50 {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border-light);
+  color: #1e293b;
+}
+
+:root[data-theme="glass"].dark .card-premium,
+:root[data-theme="glass"].dark .bg-white,
+:root[data-theme="glass"].dark .bg-slate-50,
+:root[data-theme="glass"].dark .dark\:bg-dark-base,
+:root[data-theme="glass"].dark .dark\:bg-dark-surface {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border-dark);
+  color: #f8fafc;
+}
+
+/* Custom Glass Scrollbars */
+:root[data-theme="glass"] ::-webkit-scrollbar {
+  width: 6px;
+}
+:root[data-theme="glass"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+:root[data-theme="glass"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+:root[data-theme="glass"].dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme="glass"] .btn-secondary-premium {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+:root[data-theme="glass"] main {
+  background: transparent;
+}
+
+/* Hide Chrome, Safari, Edge, Opera spin buttons globally */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide Firefox spin buttons globally */
+input[type="number"] {
+  -moz-appearance: textfield;
+}

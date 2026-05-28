@@ -9,11 +9,11 @@
     "ignoreUnknown": false,
     "includes": [
       "**",
-
       "!**/.venv",
       "!**/__pycache__",
       "!**/*.py",
       "!**/pyproject.toml",
+      "!**/inventory.db",
       "!**/uv.lock",
 
       "!**/node_modules",
@@ -37,7 +37,7 @@
       "correctness": {
         "noUnusedImports": "error"
       },
-	   "a11y": {
+      "a11y": {
         "noSvgWithoutTitle": "off"
       },
       "suspicious": {
@@ -47,7 +47,8 @@
         "useLiteralKeys": "off"
       },
       "style": {
-        "useImportType": "off"
+        "useImportType": "off",
+        "noNonNullAssertion": "off"
       }
     }
   },

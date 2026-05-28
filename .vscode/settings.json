@@ -1,0 +1,250 @@
+{
+  "terminal.integrated.copyOnSelection": true,
+  "terminal.integrated.sendKeybindingsToShell": true,
+  "terminal.integrated.commandsToSkipShell": [
+    "workbench.action.terminal.copySelection",
+    "workbench.action.terminal.paste"
+  ],
+  // "files.exclude": {
+  //   "**/__pycache__": true
+  // },
+  // "search.exclude": {
+  //   "**/__pycache__": true
+  // },
+  "explorer.autoReveal": false,
+  /*
+     =========================================================
+                  SEARCH
+     =========================================================
+  */
+  "search.quickOpen.includeHistory": true,
+  "search.quickOpen.includeSymbols": false,
+  /*
+     =========================================================
+                  FILE SEARCH
+     =========================================================
+  */
+  "search.followSymlinks": true,
+  "search.smartCase": true,
+  "search.exclude": {
+    "**/.git": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ipynb_checkpoints": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "**/ruff_cache/": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.venv": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ipynb_checkpoints": true,
+    "**/build": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "**/ruff_cache/": true
+  },
+  /*
+     =========================================================
+                  PYTHON / PYLANCE
+     =========================================================
+  */
+  // "python.analysis.typeCheckingMode": "strict",
+  "python.envFile": "./.env",
+  "python.terminal.useEnvFile": true,
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.inlayHints.functionReturnTypes": false,
+  "python.analysis.inlayHints.variableTypes": false,
+  "python.analysis.inlayHints.callArgumentNames": "partial",
+  // Better inference engine
+  "python.analysis.autoImportCompletions": true,
+  // Disable for giant monorepo performance
+  "python.analysis.indexing": false,
+  /*
+     =========================================================
+                    FORMATTER / RUFF
+     =========================================================
+  */
+  // Disable Ruff's linting diagnostics (warnings/errors) in the editor so it only formats,
+  // preventing it from conflicting with the Pyrefly language server.
+  "ruff.lint.enable": false,
+  "ruff.lineLength": 120,
+  "ruff.fixAll": true,
+  "ruff.organizeImports": true,
+  "ruff.exclude": [
+    "**/.git",
+    "**/.venv",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.ipynb_checkpoints",
+    "**/build",
+    "**/dist",
+    "**/node_modules",
+    "**/ruff_cache/"
+  ],
+  "[javascript]": {
+    "editor.rulers": [
+      120
+    ],
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "editor.rulers": [
+      120
+    ]
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+    "editor.rulers": [
+      120
+    ]
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features",
+    "editor.rulers": [
+      120
+    ]
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": "explicit",
+    "source.organizeImports.ruff": "explicit",
+    "source.organizeImports": "explicit",
+    "source.removeUnusedImports": "explicit",
+    "source.fixAll.ts": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+      120
+    ],
+  },
+  // --- JUPYTER NOTEBOOK FORMATTING & LINTING ON SAVE (RUFF) ---
+  "notebook.formatOnSave.enabled": true,
+  "notebook.codeActionsOnSave": {
+    // Specifically organizes imports (isort equivalent)
+    "notebook.source.organizeImports.ruff": "explicit"
+  },
+  /*
+     =========================================================
+                    EDITOR PRODUCTIVITY
+     =========================================================
+  */
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "editor.autoClosingBrackets": "always",
+  "editor.autoClosingQuotes": "always",
+  "editor.autoSurround": "languageDefined",
+  "editor.autoIndent": "full",
+  "editor.tabCompletion": "on",
+  "editor.inlineSuggest.enabled": true,
+  "editor.snippetSuggestions": "top",
+  "editor.parameterHints.enabled": true,
+  // This ensures snippets appear immediately while typing def.
+  "editor.suggest.snippetsPreventQuickSuggestions": false,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  // Strong IDE like feel
+  // "editor.acceptSuggestionOnEnter": "smart",
+  // "editor.suggestSelection": "first",
+  // "editor.wordBasedSuggestions": false,
+  // Bonus: remove VS Code “confusing behavior
+  // "editor.suggest.showSnippets": true,
+  // "editor.suggest.showWords": false,
+  /*
+     =========================================================
+                    CURSOR / UX
+     =========================================================
+  */
+  "editor.multiCursorModifier": "alt",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.matchBrackets": "always",
+  "editor.smoothScrolling": true,
+  "editor.minimap.enabled": true,
+  "editor.bracketPairColorization.enabled": true,
+  /*
+     =========================================================
+                    FILE CLEANUP
+     =========================================================
+  */
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  /*
+     =========================================================
+                    FILE WATCHER OPTIMIZATION
+     =========================================================
+  */
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/modules/zope_build/parts/**": true,
+    "**/modules/zope_build/var/**": true,
+    "**/modules/zope_build/tmp/**": true,
+    "**/ZODB/**": true,
+    "**/docker/**": true,
+    "**/downloads/**": true,
+    "**/.pytest_cache/**": true
+  },
+  /*
+     =========================================================
+                    DEBUG CONSOLE
+     =========================================================
+  */
+  "debug.toolBarLocation": "docked",
+  "workbench.colorCustomizations": {
+    "debugConsole.errorForeground": "#bbbbbb",
+    "debugConsole.warningForeground": "#bbbbbb",
+    "debugConsole.infoForeground": "#9cdcfe",
+    "debugConsole.sourceForeground": "#888888",
+    "debugConsoleInputIcon.foreground": "#3399ff"
+  },
+  /*
+     =========================================================
+                    GIT
+     =========================================================
+  */
+  "git.ignoreLimitWarning": true,
+  "git.decorations.enabled": false,
+  "scm.diffDecorations": "all",
+  /*
+     =========================================================
+                    COPILOT
+     =========================================================
+  */
+  "github.copilot.selectedCompletionModel": "gemini-2.5-flash-preview",
+  /*
+     =========================================================
+                    GITLENS — MINIMAL BLAME ONLY MODE
+     =========================================================
+  */
+  // Show commit info beside current line
+  "gitlens.currentLine.enabled": true,
+  // Relative timestamps
+  "gitlens.defaultDateStyle": "relative",
+  // Ignore whitespace-only changes
+  "gitlens.blame.ignoreWhitespace": true,
+  //              DISABLE NOISY FEATURES
+  // Remove CodeLens above functions/classes
+  "gitlens.codeLens.enabled": false,
+  // Disable hover popups
+  "gitlens.hovers.enabled": false,
+  // Remove GitLens from status bar
+  "gitlens.statusBar.enabled": false,
+  // Disable inline blame for every line
+  "gitlens.currentLine.pullRequests.enabled": false,
+  //              DISABLE AI / CLOUD FEATURES
+  "gitlens.plusFeatures.enabled": false,
+  "gitlens.ai.enabled": false,
+  //          QUALITY OF LIFE
+  "gitlens.fileAnnotations.dismissOnEscape": true,
+  "gitlens.showWhatsNewAfterUpgrades": false
+}
