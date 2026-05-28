@@ -98,11 +98,6 @@ uploads/
 tmp/
 temp/
 
-# Environment variables
-.env
-.env.*
-!.env.example
-
 # SQLite
 *.sqlite3
 *.db
