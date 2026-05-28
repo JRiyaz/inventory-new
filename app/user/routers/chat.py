@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 
@@ -64,12 +64,19 @@ manager = ConnectionManager()
 
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
+async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = Query(None)):
     """
     WebSocket endpoint for support chat.
     Validates the user's active session token before allowing connections.
     """
-    payload = decode_access_token(token)
+    session_token = websocket.cookies.get("session_token")
+    active_token = session_token or token
+
+    if not active_token:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Authentication token missing")
+        return
+
+    payload = decode_access_token(active_token)
     if not payload:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Invalid authentication token")
         return

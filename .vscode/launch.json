@@ -10,7 +10,9 @@
       // "args": ["run", "run.py", "--reload"],
       "envFile": "${workspaceFolder}/.env",
       "program": "run.py",
-      // "args": ["--reload"],
+      // "args": [
+      //   "--reload"
+      // ],
       "console": "internalConsole",
       "cwd": "${workspaceFolder}"
     },

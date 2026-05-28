@@ -3,6 +3,7 @@ import { Directive, forwardRef, inject } from '@angular/core';
 import { AbstractControl, AsyncValidator, NG_ASYNC_VALIDATORS, ValidationErrors } from '@angular/forms';
 import { Observable, timer } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
+import { environment } from '../environment';
 
 @Directive({
   selector:
@@ -29,7 +30,7 @@ export class UsernameValidatorDirective implements AsyncValidator {
       switchMap(() =>
         this.http
           .get<{ exists: boolean }>(
-            `http://localhost:3000/api/auth/check-username?username=${encodeURIComponent(control.value)}`,
+            `${environment.apiUrl}/auth/check-username?username=${encodeURIComponent(control.value)}`,
           )
           .pipe(
             map((res) => (res.exists ? { usernameTaken: true } : null)),

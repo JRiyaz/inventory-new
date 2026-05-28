@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import select
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlmodel import func, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..database import get_db
@@ -11,13 +11,48 @@ router = APIRouter(prefix="/customers", tags=["Customer Profiles"])
 
 
 @router.get("", response_model=list[CustomerResponse])
-async def list_customers(page: int = 1, limit: int = 10, db: AsyncSession = Depends(get_db)):
+async def list_customers(
+    response: Response,
+    page: int = 1,
+    _page: int = 1,
+    limit: int = 10,
+    _limit: int = 10,
+    q: str | None = None,
+    search: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
     """
     Returns a paginated list of all customer profiles.
     """
-    offset = (page - 1) * limit
-    result = await db.execute(select(Customer).offset(offset).limit(limit))
-    return result.scalars().all()
+    active_page = page if page != 1 else _page
+    active_limit = limit if limit != 10 else _limit
+    active_search = q or search
+
+    query = select(Customer)
+    count_query = select(func.count()).select_from(Customer)
+
+    if active_search:
+        search_filter = or_(
+            Customer.name.contains(active_search),
+            Customer.email.contains(active_search),
+            Customer.company.contains(active_search),
+        )
+        query = query.where(search_filter)
+        count_query = count_query.where(search_filter)
+
+    total_count_res = await db.execute(count_query)
+    total_count = total_count_res.scalar_one()
+
+    offset = (active_page - 1) * active_limit
+    query = query.offset(offset).limit(active_limit)
+
+    result = await db.execute(query)
+    customers = result.scalars().all()
+
+    response.headers["X-Total-Count"] = str(total_count)
+    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+
+    return customers
 
 
 @router.get("/{customer_id}", response_model=CustomerResponse)

@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..database import get_db
 from ..models.domain import AuditLog, User, UserPermission, UserSettings
-from ..schemas.user import UserResponse, UserRoleUpdate, UserSettingsResponse, UserSettingsUpdate
+from ..schemas.user import UserAdminUpdate, UserResponse, UserRoleUpdate, UserSettingsResponse, UserSettingsUpdate
 from ..utils.audit import create_audit_entry
 from ..utils.dependencies import RoleChecker, get_current_user
 
@@ -216,3 +216,89 @@ async def update_role_permissions(
     db.add(perm)
     await db.commit()
     return {"status": "success", "role": role}
+
+
+@router.put("/admin-update/{user_id}", response_model=UserResponse)
+async def admin_update_user(
+    user_id: int,
+    payload: UserAdminUpdate,
+    request: Request,
+    current_user: User = Depends(RoleChecker(["Admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Allows system Admin to edit any user's profile (name, email, role, status, company) and optionally change their password.
+    Sends security alerts to the user.
+    """
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User profile not located")
+
+    # Audit details of changes
+    changes = []
+    if user.name != payload.name:
+        changes.append(f"Name changed from '{user.name}' to '{payload.name}'")
+        user.name = payload.name
+    if user.email != payload.email:
+        changes.append(f"Email changed from '{user.email}' to '{payload.email}'")
+        user.email = payload.email
+    if user.role != payload.role:
+        changes.append(f"Role changed from '{user.role}' to '{payload.role}'")
+        user.role = payload.role
+    if user.status != payload.status:
+        changes.append(f"Status changed from '{user.status}' to '{payload.status}'")
+        user.status = payload.status
+    if user.company != payload.company:
+        changes.append(f"Company changed from '{user.company}' to '{payload.company}'")
+        user.company = payload.company
+
+    password_changed = False
+    if payload.password:
+        from ..utils.security import hash_password
+
+        user.password_hash = hash_password(payload.password)
+        changes.append("Password reset by Administrator")
+        password_changed = True
+
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    # 1. Fetch user settings to check email preferences (email_alerts toggle)
+    settings_res = await db.execute(select(UserSettings).where(UserSettings.user_id == user.id))
+    user_settings = settings_res.scalar_one_or_none()
+
+    # 2. Trigger configuration-driven email alerts
+    from ..utils.email import EmailService
+
+    if changes:
+        details_str = "\n".join(changes)
+        # Send profile update email
+        EmailService.send_profile_update_alert(
+            to_email=user.email,
+            name=user.name,
+            details=details_str,
+            user_settings=user_settings,
+        )
+        if password_changed:
+            EmailService.send_password_change_alert(
+                to_email=user.email,
+                name=user.name,
+                user_settings=user_settings,
+            )
+
+    # Log audit event
+    correlation_id = request.headers.get("x-correlation-id")
+    await create_audit_entry(
+        db=db,
+        action="ADMIN_UPDATE_USER",
+        resource="Users",
+        details=f"Admin {current_user.username} modified user {user.username}: {', '.join(changes)}",
+        user_id=current_user.id,
+        username=current_user.username,
+        ip_address=request.client.host if request.client else None,
+        correlation_id=correlation_id,
+    )
+
+    return user

@@ -14,6 +14,8 @@ class User(SQLModel, table=True):
     status: str = Field(default="Active", nullable=False)  # Active, Suspended
     avatar_url: str | None = Field(default=None)
     join_date: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+    two_factor_secret: str | None = Field(default=None)
+    two_factor_enabled: bool = Field(default=False)
 
 
 class UserPermission(SQLModel, table=True):
@@ -23,6 +25,13 @@ class UserPermission(SQLModel, table=True):
     can_write: bool = Field(default=False, nullable=False)
     can_update: bool = Field(default=False, nullable=False)
     can_delete: bool = Field(default=False, nullable=False)
+
+
+class PasswordResetOTP(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    email: str = Field(index=True, nullable=False)
+    otp: str = Field(nullable=False)
+    expires_at: datetime = Field(nullable=False)
 
 
 class UserSettings(SQLModel, table=True):
@@ -36,6 +45,7 @@ class UserSettings(SQLModel, table=True):
     urgent_persistence: bool = Field(default=False, nullable=False)
     notification_duration: int = Field(default=4000, nullable=False)
     notification_placement: str = Field(default="top-right", nullable=False)
+    email_alerts: bool = Field(default=True, nullable=False)
 
 
 class AuditLog(SQLModel, table=True):

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, Injectable, inject, signal } from '@angular/core';
-import { finalize, firstValueFrom, from, Observable, tap } from 'rxjs';
+import { finalize, map, Observable, tap } from 'rxjs';
 import { InventoryDataService, type Order } from 'ui-shared';
 
 @Injectable({
@@ -69,9 +69,36 @@ export class OrdersService {
     },
   ]);
 
+  // Unified sales order mapping helper to convert backend snake_case SalesOrder schemas to frontend Order camelCase
+  public mapSalesOrderToOrder(so: any): Order {
+    const customers = this.dataService.customers();
+    const customer = customers.find((c) => c.id === so.customer_id.toString() || Number(c.id) === so.customer_id);
+    const customerName = customer ? customer.name : `Customer #${so.customer_id}`;
+
+    return {
+      id: so.id ? so.id.toString() : so.order_number || '',
+      customer: customerName,
+      customerName: customerName,
+      status: so.status || 'Pending',
+      amount: so.total_amount || 0,
+      totalAmount: so.total_amount || 0,
+      date: so.created_at ? so.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      priority: so.priority || false,
+      items: (so.items || []).map((item: any) => ({
+        productId: item.product_id,
+        name: item.name,
+        qty: item.quantity,
+        price: item.unit_price,
+      })),
+      createdBy: so.created_by || 'Admin',
+    };
+  }
+
   // Actions
   getOrdersData(): Observable<Order[]> {
-    return this.http.get<Order[]>(`${this.dataService.baseUrl}/orders`);
+    return this.http
+      .get<any[]>(`${this.dataService.baseUrl}/orders`)
+      .pipe(map((body) => body.map((so) => this.mapSalesOrderToOrder(so))));
   }
 
   loadOrders(): Observable<any> {
@@ -94,18 +121,21 @@ export class OrdersService {
       params += `&_sort=${field}&_order=${order}`;
     }
 
-    return this.http.get<Order[]>(`${this.dataService.baseUrl}/orders?${params}`, { observe: 'response' }).pipe(
+    return this.http.get<any[]>(`${this.dataService.baseUrl}/orders?${params}`, { observe: 'response' }).pipe(
       tap((res) => {
         const total = Number(res.headers.get('X-Total-Count') || '0');
         this.totalCount.set(total);
-        this.dataService.setOrders(res.body || []);
+        const mapped = (res.body || []).map((so) => this.mapSalesOrderToOrder(so));
+        this.dataService.setOrders(mapped);
       }),
       finalize(() => this.isLoading.set(false)),
     );
   }
 
   getOrderData(id: string): Observable<Order> {
-    return this.http.get<Order>(`${this.dataService.baseUrl}/orders/${id}`);
+    return this.http
+      .get<any>(`${this.dataService.baseUrl}/orders/${id}`)
+      .pipe(map((so) => this.mapSalesOrderToOrder(so)));
   }
 
   setOrders(data: Order[]): void {
@@ -144,21 +174,46 @@ export class OrdersService {
     return this.dataService.getPaymentsByOrderId(orderId);
   }
 
-  addOrder(order: Order) {
+  addOrder(order: Order): Observable<Order> {
     this.isActionLoading.set(true);
-    const promise = firstValueFrom(this.http.post<Order>(`${this.dataService.baseUrl}/orders`, order)).then((data) => {
-      this.dataService.addOrderToState(data);
-    });
-    return from(promise).pipe(finalize(() => this.isActionLoading.set(false)));
+
+    const customers = this.dataService.customers();
+    const customer = customers.find((c) => c.name === order.customer);
+    const customerId = customer ? Number(customer.id) : 1;
+
+    const payload = {
+      customer_id: customerId,
+      items: order.items.map((item) => {
+        const prod = this.dataService.products().find((p) => p.id === item.productId);
+        return {
+          product_id: item.productId,
+          sku: prod?.sku || `SKU-${item.productId}`,
+          name: item.name,
+          quantity: item.qty,
+          unit_price: item.price,
+        };
+      }),
+    };
+
+    return this.http.post<any>(`${this.dataService.baseUrl}/orders`, payload, { withCredentials: true }).pipe(
+      map((data) => {
+        const mapped = this.mapSalesOrderToOrder(data);
+        this.dataService.addOrderToState(mapped);
+        return mapped;
+      }),
+      finalize(() => this.isActionLoading.set(false)),
+    );
   }
 
-  updateOrder(order: Order) {
+  updateOrder(order: Order): Observable<Order> {
     this.isActionLoading.set(true);
-    const promise = firstValueFrom(this.http.put<Order>(`${this.dataService.baseUrl}/orders/${order.id}`, order)).then(
-      (data) => {
-        this.dataService.updateOrderInState(data);
-      },
+    return this.http.put<any>(`${this.dataService.baseUrl}/orders/${order.id}`, order, { withCredentials: true }).pipe(
+      map((data) => {
+        const mapped = this.mapSalesOrderToOrder(data);
+        this.dataService.updateOrderInState(mapped);
+        return mapped;
+      }),
+      finalize(() => this.isActionLoading.set(false)),
     );
-    return from(promise).pipe(finalize(() => this.isActionLoading.set(false)));
   }
 }

@@ -10,7 +10,7 @@ async def deduct_inventory_stock(product_id: int, quantity: int, order_number: s
     Asynchronously calls the remote Inventory Service to verify stock and deduct items.
     Protects against SSRF strictly by validating hostnames and IPs before making the request.
     """
-    endpoint = f"{settings.INVENTORY_SERVICE_URL}/stock/adjust"
+    endpoint = f"{settings.INVENTORY_SERVICE_URL}/api/stock/adjust"
 
     # 1. SSRF Guard Check
     if not is_url_safe(endpoint):

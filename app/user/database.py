@@ -2,7 +2,7 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from .config import settings
@@ -17,80 +17,183 @@ async_session_maker = sessionmaker(
 
 
 async def seed_data(session: AsyncSession) -> None:
-    from sqlmodel import select
-    from user.models.domain import User, UserPermission, UserSettings
-    from user.utils.security import hash_password
+    from app.user.dummydata import PERMISSIONS_DATA, USERS_SEED_DATA
+
+    from .models.domain import User, UserPermission, UserSettings
+    from .utils.security import hash_password
 
     # 1. Seed Access Control CRUD Permissions
-    permissions = [
-        UserPermission(role="Admin", can_read=True, can_write=True, can_update=True, can_delete=True),
-        UserPermission(role="Agent", can_read=True, can_write=True, can_update=True, can_delete=False),
-        UserPermission(role="Customer", can_read=True, can_write=False, can_update=False, can_delete=False),
-    ]
-    for perm in permissions:
-        res = await session.execute(select(UserPermission).where(UserPermission.role == perm.role))
+    for perm_dict in PERMISSIONS_DATA:
+        res = await session.execute(select(UserPermission).where(UserPermission.role == perm_dict["role"]))
         if not res.scalar_one_or_none():
-            session.add(perm)
+            session.add(UserPermission(**perm_dict))
 
-    # 2. Seed Admin User (Full Access Rights)
-    admin_res = await session.execute(select(User).where(User.username == "admin"))
-    if not admin_res.scalar_one_or_none():
-        admin_user = User(
-            username="admin",
-            email="admin@company.com",
-            password_hash=hash_password("adminpassword"),
-            name="Super Admin",
-            company="System Corp",
-            role="Admin",
-            status="Active",
-            avatar_url="https://ui-avatars.com/api/?name=Super+Admin&background=3b429f&color=fff&size=80",
-        )
-        session.add(admin_user)
+    # 2. Seed User Profiles & Settings
+    for seed_item in USERS_SEED_DATA:
+        user_dict = seed_item["user"]
+        settings_dict = seed_item["settings"]
+
+        user_res = await session.execute(select(User).where(User.username == user_dict["username"]))
+        if not user_res.scalar_one_or_none():
+            pwd_hash = hash_password(user_dict["password_plain"])
+            user_kwargs = {k: v for k, v in user_dict.items() if k != "password_plain"}
+
+            new_user = User(**user_kwargs, password_hash=pwd_hash)
+            session.add(new_user)
+            await session.flush()
+
+            new_settings = UserSettings(**settings_dict, user_id=new_user.id)
+            session.add(new_settings)
+
+    # 4. Seed Suppliers
+    from app.inventory.models.domain import Product, StockLevel, StockMovement, Supplier, Warehouse
+    from app.store.models.domain import Customer, Offer, SalesOrder, SalesOrderItem, SalesPayment
+    from app.user.dummydata import (
+        CUSTOMERS_DATA,
+        OFFERS_DATA,
+        ORDERS_DATA,
+        PRODUCTS_DATA,
+        SUPPLIERS_DATA,
+        WAREHOUSES_DATA,
+    )
+
+    supplier_res = await session.execute(select(Supplier))
+    if not supplier_res.scalars().first():
+        for item in SUPPLIERS_DATA:
+            session.add(Supplier(**item))
         await session.flush()
 
-        # Seed default settings for admin
-        admin_settings = UserSettings(
-            user_id=admin_user.id,
-            theme="void-blue",
-            loader_animation="bloom",
-            animation_tempo=800,
-            display_images=True,
-            dnd=False,
-            urgent_persistence=False,
-            notification_duration=4000,
-            notification_placement="top-right",
-        )
-        session.add(admin_settings)
+    # 5. Seed Products
+    product_res = await session.execute(select(Product))
+    if not product_res.scalars().first():
+        sup_res = await session.execute(select(Supplier))
+        sups = sup_res.scalars().all()
+        sup_map = {s.code: s.id for s in sups}
 
-    # 3. Seed Viewer User (Minimal Access Rights)
-    viewer_res = await session.execute(select(User).where(User.username == "viewer"))
-    if not viewer_res.scalar_one_or_none():
-        viewer_user = User(
-            username="viewer",
-            email="viewer@company.com",
-            password_hash=hash_password("viewerpassword"),
-            name="Guest Viewer",
-            company="Viewer Inc",
-            role="Customer",
-            status="Active",
-            avatar_url="https://ui-avatars.com/api/?name=Guest+Viewer&background=e11d48&color=fff&size=80",
-        )
-        session.add(viewer_user)
+        for i, item in enumerate(PRODUCTS_DATA):
+            if i < 3:
+                supplier_id = sup_map.get("SUP-001")
+            elif i < 5:
+                supplier_id = sup_map.get("SUP-002")
+            else:
+                supplier_id = sup_map.get("SUP-003")
+            session.add(Product(**item, supplier_id=supplier_id))
         await session.flush()
 
-        # Seed default settings for viewer
-        viewer_settings = UserSettings(
-            user_id=viewer_user.id,
-            theme="glass",
-            loader_animation="pulse",
-            animation_tempo=400,
-            display_images=True,
-            dnd=True,
-            urgent_persistence=False,
-            notification_duration=2000,
-            notification_placement="top-left",
-        )
-        session.add(viewer_settings)
+    # 6. Seed Warehouses
+    warehouse_res = await session.execute(select(Warehouse))
+    if not warehouse_res.scalars().first():
+        for item in WAREHOUSES_DATA:
+            session.add(Warehouse(**item))
+        await session.flush()
+
+    # 7. Seed StockLevels and Movements
+    stock_check = await session.execute(select(StockLevel))
+    if not stock_check.scalars().first():
+        p_res = await session.execute(select(Product))
+        prods = p_res.scalars().all()
+        w_res = await session.execute(select(Warehouse))
+        whs = w_res.scalars().all()
+
+        if prods and whs:
+            import random
+
+            for p in prods:
+                for w in whs:
+                    qty = random.randint(10, 150)
+                    session.add(StockLevel(product_id=p.id, warehouse_id=w.id, quantity=qty, min_stock=20))
+                    session.add(
+                        StockMovement(
+                            product_id=p.id,
+                            warehouse_id=w.id,
+                            quantity_changed=qty,
+                            type="INBOUND",
+                            reference="INITIAL-SEED",
+                            details="Initial stock seed from database setup",
+                            username="admin",
+                        )
+                    )
+            await session.flush()
+
+    # 8. Seed Customers (at least 15 to test pagination)
+    customer_res = await session.execute(select(Customer))
+    if not customer_res.scalars().first():
+        for item in CUSTOMERS_DATA:
+            session.add(Customer(**item))
+        await session.flush()
+
+    # 9. Seed Sales Orders & Payments
+    order_res = await session.execute(select(SalesOrder))
+    if not order_res.scalars().first():
+        c_res = await session.execute(select(Customer))
+        custs = c_res.scalars().all()
+        p_res = await session.execute(select(Product))
+        prods = p_res.scalars().all()
+
+        prod_map = {p.sku: p.id for p in prods}
+        prod_sku_name = {p.sku: p.name for p in prods}
+
+        if custs and prods:
+            for i, order_dict in enumerate(ORDERS_DATA):
+                customer_id = custs[i % len(custs)].id
+
+                so = SalesOrder(
+                    order_number=order_dict["order_number"],
+                    customer_id=customer_id,
+                    status=order_dict["status"],
+                    total_amount=order_dict["total_amount"],
+                    payment_status=order_dict["payment_status"],
+                )
+                session.add(so)
+                await session.flush()
+
+                for item_dict in order_dict["items"]:
+                    sku = item_dict["product_sku"]
+                    session.add(
+                        SalesOrderItem(
+                            order_id=so.id,
+                            product_id=prod_map.get(sku, prods[0].id),
+                            sku=sku,
+                            name=prod_sku_name.get(sku, prods[0].name),
+                            quantity=item_dict["quantity"],
+                            unit_price=item_dict["unit_price"],
+                        )
+                    )
+
+                if order_dict["payment"]:
+                    pay_dict = order_dict["payment"]
+                    session.add(
+                        SalesPayment(
+                            order_id=so.id,
+                            amount=pay_dict["amount"],
+                            payment_method=pay_dict["payment_method"],
+                            transaction_reference=pay_dict["transaction_reference"],
+                            status=pay_dict["status"],
+                        )
+                    )
+            await session.flush()
+
+    # 10. Seed Offers
+    offer_res = await session.execute(select(Offer))
+    if not offer_res.scalars().first():
+        p_res = await session.execute(select(Product))
+        prods = p_res.scalars().all()
+        prod_map = {p.category: p.id for p in prods}
+
+        for item in OFFERS_DATA:
+            product_id = prod_map.get(item["category"]) if item["category"] else None
+            session.add(
+                Offer(
+                    title=item["title"],
+                    description=item["description"],
+                    discount=item["discount"],
+                    category=item["category"],
+                    product_id=product_id,
+                    expiry_date=item["expiry_date"],
+                    color=item["color"],
+                )
+            )
+        await session.flush()
 
     await session.commit()
 

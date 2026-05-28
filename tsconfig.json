@@ -15,6 +15,7 @@
     "target": "ES2022",
     "module": "preserve",
     "baseUrl": "./",
+    "ignoreDeprecations": "5.0",
     "paths": {
       "ui-shared": ["web/app/shared/public-api.ts"]
     }

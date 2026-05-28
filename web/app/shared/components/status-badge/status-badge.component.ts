@@ -34,7 +34,7 @@ export class StatusBadgeComponent {
   status = input.required<string>();
 
   statusClasses = computed(() => {
-    const s = this.status().toLowerCase();
+    const s = (this.status() || '').toLowerCase();
     if (
       ['completed', 'active', 'shipped', 'delivered', 'received', 'optimal stock', 'in stock', 'low risk'].includes(s)
     ) {
@@ -50,7 +50,7 @@ export class StatusBadgeComponent {
   });
 
   dotClasses = computed(() => {
-    const s = this.status().toLowerCase();
+    const s = (this.status() || '').toLowerCase();
     if (
       ['completed', 'active', 'shipped', 'delivered', 'received', 'optimal stock', 'in stock', 'low risk'].includes(s)
     ) {
@@ -66,7 +66,7 @@ export class StatusBadgeComponent {
   });
 
   isProcessing = computed(() => {
-    const s = this.status().toLowerCase();
+    const s = (this.status() || '').toLowerCase();
     return [
       'pending',
       'processing',

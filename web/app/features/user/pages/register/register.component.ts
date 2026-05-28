@@ -5,7 +5,13 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { map, startWith } from 'rxjs/operators';
-import { AuthStateService, LoaderComponent, NotificationService, UsernameValidatorDirective } from 'ui-shared';
+import {
+  AuthStateService,
+  environment,
+  LoaderComponent,
+  NotificationService,
+  UsernameValidatorDirective,
+} from 'ui-shared';
 
 @Component({
   selector: 'app-register',
@@ -13,7 +19,7 @@ import { AuthStateService, LoaderComponent, NotificationService, UsernameValidat
   imports: [CommonModule, RouterModule, ReactiveFormsModule, LoaderComponent, UsernameValidatorDirective],
   template: `
     <div
-      class="min-h-screen bg-slate-50 dark:bg-dark-base flex items-center justify-center p-6 relative overflow-hidden"
+      class="min-h-screen bg-slate-50 dark:bg-dark-base text-slate-900 dark:text-slate-200 flex items-center justify-center p-6 relative overflow-hidden"
     >
       <div class="w-full max-w-xl relative z-10">
         <div class="flex flex-col items-center mb-10">
@@ -298,7 +304,7 @@ export class RegisterComponent {
         company: 'Dev Corp',
       };
 
-      this.http.post<any>('http://localhost:3000/api/auth/register', payload, { withCredentials: true }).subscribe({
+      this.http.post<any>(`${environment.apiUrl}/auth/register`, payload, { withCredentials: true }).subscribe({
         next: (res) => {
           this.isLoading.set(false);
           this.notificationService.success('Account Created', 'Registration successful! Directing to dashboard.');

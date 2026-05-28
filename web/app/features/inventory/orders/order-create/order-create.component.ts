@@ -21,6 +21,7 @@ import {
   type DropdownOption,
   InventoryDataService,
   LoaderComponent,
+  NotificationService,
   type Order,
   type OrderItem,
   type Product,
@@ -106,7 +107,10 @@ import { OrdersService } from '../orders.service';
               <button
                 type="button"
                 (click)="toggleCustomerSearch($event)"
-                class="w-full bg-transparent border-b-2 border-slate-200 dark:border-white/10 py-2.5 px-1 flex items-center justify-between cursor-pointer hover:border-primary transition-all group/btn outline-none focus:border-primary"
+                class="w-full bg-transparent border-b-2 py-2.5 px-1 flex items-center justify-between cursor-pointer hover:border-primary transition-all group/btn outline-none focus:border-primary"
+                [class.border-rose-500]="validationErrors()['customer_id']"
+                [class.border-slate-200]="!validationErrors()['customer_id']"
+                [class.dark:border-white/10]="!validationErrors()['customer_id']"
               >
                 <div class="flex items-center gap-3 truncate">
                   <div
@@ -173,6 +177,10 @@ import { OrdersService } from '../orders.service';
               >
                 Selected Customer
               </label>
+
+              @if (validationErrors()['customer_id']) {
+                <p class="text-rose-500 text-[10px] mt-1 font-bold">{{ validationErrors()['customer_id'] }}</p>
+              }
 
               <!-- Customer Search Popover -->
               @if (showCustomerSearch()) {
@@ -429,6 +437,15 @@ import { OrdersService } from '../orders.service';
           <div
             class="max-h-[500px] overflow-y-auto custom-scrollbar -mx-2 px-2 pb-60 pt-1"
           >
+            @if (validationErrors()['items']) {
+              <div class="mx-2 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest mb-3 animate-fade-in flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ validationErrors()['items'] }}</span>
+              </div>
+            }
+
             <div class="space-y-2">
               <!-- Table Headers -->
               @if (orderItems().length > 0) {
@@ -496,7 +513,10 @@ import { OrdersService } from '../orders.service';
                       type="number"
                       [ngModel]="item.qty"
                       (ngModelChange)="setQty(item, $event)"
-                      class="w-12 text-center text-xs font-black text-slate-900 dark:text-white bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded focus:border-primary outline-none py-0.5"
+                      class="w-12 text-center text-xs font-black text-slate-900 dark:text-white bg-white dark:bg-white/5 border rounded focus:border-primary outline-none py-0.5"
+                      [class.border-rose-500]="getItemError(i, 'quantity')"
+                      [class.border-slate-200]="!getItemError(i, 'quantity')"
+                      [class.dark:border-white/10]="!getItemError(i, 'quantity')"
                       [max]="getProductStock(item.productId)"
                       min="1"
                     />
@@ -534,6 +554,12 @@ import { OrdersService } from '../orders.service';
                       />
                     </svg>
                   </button>
+
+                  @if (getItemError(i, 'quantity')) {
+                    <div class="col-span-6 text-rose-500 text-[9px] font-black mt-1 text-left bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-lg">
+                      {{ getItemError(i, 'quantity') }}
+                    </div>
+                  }
                 </div>
               }
 
@@ -721,6 +747,9 @@ export class OrderCreateComponent implements OnInit {
   private dataService = inject(InventoryDataService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private notificationService = inject(NotificationService);
+
+  validationErrors = signal<Record<string, string>>({});
 
   isEditMode = signal(false);
   orderId: string | null = null;
@@ -978,7 +1007,7 @@ export class OrderCreateComponent implements OnInit {
 
   getProductStock(productId: number): number {
     const p = this.dataService.products().find((prod) => prod.id === productId);
-    return p ? p.stock : 99999;
+    return p && typeof p.stock === 'number' && !Number.isNaN(p.stock) ? p.stock : 99999;
   }
 
   setQty(item: OrderItem, value: any) {
@@ -1013,8 +1042,27 @@ export class OrderCreateComponent implements OnInit {
     this.orderItems.update((items) => items.filter((_, i) => i !== index));
   }
 
+  parsePydanticErrors(errorResponse: any): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (errorResponse && Array.isArray(errorResponse.detail)) {
+      errorResponse.detail.forEach((err: any) => {
+        if (Array.isArray(err.loc)) {
+          const key = err.loc.filter((part: any) => part !== 'body').join('.');
+          errors[key] = err.msg;
+        }
+      });
+    }
+    return errors;
+  }
+
+  getItemError(index: number, field: string): string | null {
+    return this.validationErrors()[`items.${index}.${field}`] || null;
+  }
+
   submitOrder() {
     if (!this.canSubmit()) return;
+
+    this.validationErrors.set({});
 
     const order: Order = {
       id: (this.isEditMode() ? this.orderId : `ORD-${Math.floor(1000 + Math.random() * 9000)}`) as string,
@@ -1031,8 +1079,24 @@ export class OrderCreateComponent implements OnInit {
 
     const action = this.isEditMode() ? this.service.updateOrder(order) : this.service.addOrder(order);
 
-    action.subscribe(() => {
-      this.router.navigate(['/inventory/orders', order.id]);
+    action.subscribe({
+      next: (savedOrder) => {
+        this.validationErrors.set({});
+        this.notificationService.success('Success', `Order successfully ${this.isEditMode() ? 'updated' : 'created'}.`);
+        this.router.navigate(['/inventory/orders', savedOrder.id]);
+      },
+      error: (err) => {
+        if (err.status === 422 && err.error) {
+          const parsed = this.parsePydanticErrors(err.error);
+          this.validationErrors.set(parsed);
+          this.notificationService.error('Validation Failed', 'Please review the highlighted fields in the form.');
+        } else {
+          this.notificationService.error(
+            'Action Failed',
+            err.error?.detail || err.message || 'An unexpected error occurred while processing the order.',
+          );
+        }
+      },
     });
   }
 

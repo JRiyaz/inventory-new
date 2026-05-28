@@ -1,5 +1,6 @@
 import { computed, Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
+import { environment } from '../environment';
 import { NotificationService } from './notification.service';
 
 export interface ChatMessage {
@@ -48,9 +49,7 @@ export class ChatService {
   private initWebSocket() {
     this.isConnecting.set(true);
 
-    // Developer Shared JWT Access Token for support channels (signed via settings shared key)
-    const devToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJSaXlheiIsIm9sZSI6IkFkbWluIn0.c94029'; // Simplified signature matching settings
-    const wsUrl = `ws://localhost:3000/api/chat/ws?token=${devToken}`;
+    const wsUrl = environment.wsUrl;
 
     try {
       this.socket = new WebSocket(wsUrl);

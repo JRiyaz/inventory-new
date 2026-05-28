@@ -11,6 +11,7 @@ export interface Notification {
   read: boolean;
   autoClose?: boolean;
   urgent?: boolean;
+  link?: string;
 }
 
 export type NotificationPlacement = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
@@ -64,7 +65,7 @@ export class NotificationService {
     });
   }
 
-  notify(type: NotificationType, title: string, message: string, urgent: boolean = false) {
+  notify(type: NotificationType, title: string, message: string, urgent: boolean = false, link?: string) {
     const id = Math.random().toString(36).substring(2, 9);
     const config = this.config();
 
@@ -77,6 +78,7 @@ export class NotificationService {
       read: false,
       autoClose: urgent ? !config.urgentStick : true,
       urgent,
+      link,
     };
 
     // Add to main list
@@ -97,20 +99,20 @@ export class NotificationService {
     return id;
   }
 
-  success(title: string, message: string) {
-    return this.notify('success', title, message);
+  success(title: string, message: string, link?: string) {
+    return this.notify('success', title, message, false, link);
   }
 
-  error(title: string, message: string) {
-    return this.notify('error', title, message);
+  error(title: string, message: string, link?: string) {
+    return this.notify('error', title, message, false, link);
   }
 
-  info(title: string, message: string) {
-    return this.notify('info', title, message);
+  info(title: string, message: string, link?: string) {
+    return this.notify('info', title, message, false, link);
   }
 
-  warning(title: string, message: string) {
-    return this.notify('warning', title, message);
+  warning(title: string, message: string, link?: string) {
+    return this.notify('warning', title, message, false, link);
   }
 
   removeToast(id: string) {

@@ -37,6 +37,9 @@ class WarehouseResponse(BaseModel):
     name: str
     location: str
     status: str
+    currentStock: int = 0
+    utilization: float = 0.0
+    zones: list = []
 
     class Config:
         from_attributes = True

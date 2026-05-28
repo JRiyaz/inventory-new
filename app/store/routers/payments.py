@@ -1,7 +1,7 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from sqlmodel import select
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
+from sqlmodel import func, or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..database import get_db
@@ -14,13 +14,75 @@ router = APIRouter(prefix="/payments", tags=["Payments Ledger"])
 
 
 @router.get("", response_model=list[SalesPaymentResponse])
-async def list_payments(page: int = 1, limit: int = 10, db: AsyncSession = Depends(get_db)):
+async def list_payments(
+    response: Response,
+    page: int = 1,
+    _page: int = 1,
+    limit: int = 10,
+    _limit: int = 10,
+    q: str | None = None,
+    search: str | None = None,
+    status: str | None = None,
+    _sort: str | None = None,
+    _order: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
     """
     Returns all processed payments in the ledger (paginated).
     """
-    offset = (page - 1) * limit
-    result = await db.execute(select(SalesPayment).offset(offset).limit(limit))
-    return result.scalars().all()
+    active_page = page if page != 1 else _page
+    active_limit = limit if limit != 10 else _limit
+    active_search = q or search
+
+    query = select(SalesPayment)
+    count_query = select(func.count()).select_from(SalesPayment)
+
+    if active_search:
+        search_filter = or_(
+            SalesPayment.payment_method.contains(active_search),
+            SalesPayment.transaction_reference.contains(active_search),
+        )
+        query = query.where(search_filter)
+        count_query = count_query.where(search_filter)
+
+    if status and status != "All Status":
+        query = query.where(SalesPayment.status == status)
+        count_query = count_query.where(SalesPayment.status == status)
+
+    if _sort:
+        column = getattr(SalesPayment, _sort, None)
+        if column:
+            if _order == "desc":
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
+    else:
+        query = query.order_by(SalesPayment.id.desc())
+
+    total_count_res = await db.execute(count_query)
+    total_count = total_count_res.scalar_one()
+
+    offset = (active_page - 1) * active_limit
+    query = query.offset(offset).limit(active_limit)
+    result = await db.execute(query)
+    payments = result.scalars().all()
+
+    response.headers["X-Total-Count"] = str(total_count)
+    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+
+    return payments
+
+
+@router.get("/{payment_id}", response_model=SalesPaymentResponse)
+async def get_payment(payment_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Retrieves details for a specific payment.
+    """
+    result = await db.execute(select(SalesPayment).where(SalesPayment.id == payment_id))
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment transaction not located")
+    return payment
 
 
 @router.post("", response_model=SalesPaymentResponse, status_code=status.HTTP_201_CREATED)

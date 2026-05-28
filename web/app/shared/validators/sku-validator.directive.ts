@@ -3,6 +3,7 @@ import { Directive, forwardRef, inject } from '@angular/core';
 import { AbstractControl, AsyncValidator, NG_ASYNC_VALIDATORS, ValidationErrors } from '@angular/forms';
 import { Observable, timer } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
+import { environment } from '../environment';
 
 @Directive({
   selector: '[libSkuValidator][formControlName],[libSkuValidator][formControl],[libSkuValidator][ngModel]',
@@ -28,7 +29,7 @@ export class SkuValidatorDirective implements AsyncValidator {
       switchMap(() =>
         this.http
           .get<{ exists: boolean }>(
-            `http://localhost:3000/api/products/check-sku/exists?sku=${encodeURIComponent(control.value)}`,
+            `${environment.apiUrl}/products/check-sku/exists?sku=${encodeURIComponent(control.value)}`,
           )
           .pipe(
             map((res) => (res.exists ? { skuTaken: true } : null)),

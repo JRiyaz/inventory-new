@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, output } from '@angular/core';
+import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
 
 @Component({
@@ -56,6 +57,8 @@ import { NotificationService } from '../../services/notification.service';
         <div class="flex-1 overflow-y-auto p-4 space-y-3 sidebar-scroll">
           @for (n of notificationService.notifications(); track n.id) {
             <div
+              (click)="onItemClick(n)"
+              [class.cursor-pointer]="n.link"
               class="p-4 rounded-2xl border transition-all duration-200 group relative"
               [ngClass]="{
                 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.06]':
@@ -245,4 +248,13 @@ import { NotificationService } from '../../services/notification.service';
 export class NotificationSidenavComponent {
   notificationService = inject(NotificationService);
   close = output<void>();
+  private router = inject(Router);
+
+  onItemClick(n: any) {
+    this.notificationService.markAsRead(n.id);
+    if (n.link) {
+      this.router.navigateByUrl(n.link);
+      this.close.emit();
+    }
+  }
 }

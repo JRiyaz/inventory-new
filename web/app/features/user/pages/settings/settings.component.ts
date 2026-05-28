@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, inject, signal, ViewEncapsulation } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, type FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -8,6 +8,7 @@ import { map, of, startWith } from 'rxjs';
 import {
   AuthStateService,
   DisplayImageService,
+  environment,
   HasPermissionDirective,
   LoaderComponent,
   type LoaderType,
@@ -108,7 +109,7 @@ import {
         <!-- Sidebar Navigation (Left Column) -->
         <div class="w-52 flex-shrink-0 overflow-y-auto custom-scrollbar pr-3">
           <div class="space-y-1.5">
-            @for (tab of tabs; track tab.id) {
+            @for (tab of tabs(); track tab.id) {
               <button
                 (click)="activeTab.set(tab.id)"
                 class="settings-tab-btn w-full px-3 py-2 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-200 active:scale-95 flex items-center gap-2.5 text-left group"
@@ -568,6 +569,110 @@ import {
                       ></lib-loader>
                     </button>
                   </form>
+
+                  <hr class="border-slate-200/50 dark:border-white/5 my-8" />
+
+                  <h3
+                    class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest mb-6"
+                  >
+                    2-Factor Authentication (2FA)
+                  </h3>
+
+                  <div class="space-y-6 max-w-xl">
+                    @if (auth.user()?.twoFactorEnabled) {
+                      <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-600 dark:text-emerald-400 flex items-center gap-3">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <div>
+                          <p class="text-xs font-bold uppercase tracking-wider">2FA is Currently Enabled</p>
+                          <p class="text-[10px] opacity-80 mt-0.5">Your account is fully secured with time-based verification codes.</p>
+                        </div>
+                      </div>
+
+                      <div class="space-y-4">
+                        <label class="label-premium block">Disable 2-Factor Authentication</label>
+                        <div class="flex gap-3">
+                          <div class="floating-input-group flex-1">
+                            <input
+                              type="text"
+                              [value]="twoFactorCode()"
+                              (input)="twoFactorCode.set($any($event.target).value)"
+                              placeholder=" "
+                              class="floating-input"
+                              id="disable-2fa-code"
+                            />
+                            <label class="floating-label" for="disable-2fa-code">6-Digit Verification Code</label>
+                          </div>
+                          <button
+                            (click)="disable2Fa()"
+                            class="bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+                          >
+                            Disable 2FA
+                          </button>
+                        </div>
+                      </div>
+                    } @else {
+                      <div class="p-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-2xl">
+                        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Add extra security to your account</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
+                          When 2-Factor Authentication is active, you will be prompted for a secure 6-digit TOTP token from your authenticator app (like iOS Passwords or Google Authenticator) every time you sign in.
+                        </p>
+                        
+                        @if (!is2faSetupActive()) {
+                          <button
+                            (click)="start2FaSetup()"
+                            class="btn-primary-premium !py-2.5 mt-4"
+                          >
+                            Configure Authenticator App
+                          </button>
+                        }
+                      </div>
+
+                      @if (is2faSetupActive() && twoFactorSetupData()) {
+                        <div class="p-6 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-2xl space-y-6 animate-fade-in">
+                          <div class="flex flex-col md:flex-row items-center gap-6">
+                            <img [src]="twoFactorSetupData()?.qrCodeUrl" class="w-40 h-40 bg-white p-2 rounded-xl shadow-md border" />
+                            <div class="space-y-2 text-left">
+                              <p class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Scan this QR Code</p>
+                              <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
+                                Open your secure authenticator app on your iOS or Android device, scan the QR code, and enter the verification token below.
+                              </p>
+                              <div class="pt-2">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Manual Setup Key:</span>
+                                <code class="px-2 py-1 bg-slate-100 dark:bg-white/5 rounded text-primary font-mono text-xs font-bold tracking-widest select-all">
+                                  {{ twoFactorSetupData()?.secret }}
+                                </code>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="space-y-4 pt-4 border-t border-slate-200/50 dark:border-white/5">
+                            <label class="label-premium block">Verify Setup</label>
+                            <div class="flex gap-3">
+                              <div class="floating-input-group flex-1">
+                                <input
+                                  type="text"
+                                  [value]="twoFactorCode()"
+                                  (input)="twoFactorCode.set($any($event.target).value)"
+                                  placeholder=" "
+                                  class="floating-input"
+                                  id="setup-2fa-code"
+                                />
+                                <label class="floating-label" for="setup-2fa-code">6-Digit Verification Code</label>
+                              </div>
+                              <button
+                                (click)="confirm2Fa()"
+                                class="btn-primary-premium flex items-center justify-center"
+                              >
+                                Activate 2FA
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
                 </div>
               </div>
             }
@@ -916,6 +1021,63 @@ import {
                         ></div>
                       </button>
                     </div>
+
+                    <!-- Email Alerts Toggle -->
+                    <div
+                      class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-xl"
+                    >
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                            ></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <h4
+                            class="text-sm font-bold text-slate-900 dark:text-white"
+                          >
+                            Email Notifications
+                          </h4>
+                          <p
+                            class="text-xs text-slate-500 dark:text-slate-400 mt-0.5"
+                          >
+                            Receive email alerts for password changes, profile updates, and security events.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        (click)="
+                          userSettingsService.emailAlerts.set(!userSettingsService.emailAlerts());
+                          userSettingsService.markDirty()
+                        "
+                        class="w-11 h-6 rounded-full transition-colors relative"
+                        [class.bg-primary]="userSettingsService.emailAlerts()"
+                        [class.bg-slate-300]="!userSettingsService.emailAlerts()"
+                        [class.dark:bg-white/10]="
+                          !userSettingsService.emailAlerts()
+                        "
+                      >
+                        <div
+                          class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform shadow-sm"
+                          [class.translate-x-5]="
+                            userSettingsService.emailAlerts()
+                          "
+                        ></div>
+                      </button>
+                    </div>
+
                     <div
                       class="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-xl"
                     >
@@ -1320,7 +1482,171 @@ import {
                 </div>
               </div>
             }
+
+            <!-- User Management (Admin Only) -->
+            @if (activeTab() === 'users') {
+              <div class="space-y-6 animate-fade-in">
+                <div class="card-premium p-6 sm:p-8">
+                  <div class="flex justify-between items-center mb-6">
+                    <div>
+                      <h3
+                        class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest"
+                      >
+                        System User Profiles
+                      </h3>
+                      <p class="text-[9px] text-slate-500 uppercase tracking-widest mt-0.5">
+                        Manage system accounts, edit roles, assign access and reset credentials
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span
+                        class="px-2.5 py-1.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider rounded-lg border border-primary/20"
+                        >Total Accounts: {{ usersList().length }}</span
+                      >
+                    </div>
+                  </div>
+
+                  <!-- High density Table of Users -->
+                  <div class="overflow-x-auto border border-slate-200/50 dark:border-white/5 rounded-2xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr class="bg-slate-50 dark:bg-white/[0.02] text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200/50 dark:border-white/5">
+                          <th class="p-4">Name</th>
+                          <th class="p-4">Username</th>
+                          <th class="p-4">Email</th>
+                          <th class="p-4">Role</th>
+                          <th class="p-4">Status</th>
+                          <th class="p-4">MFA</th>
+                          <th class="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-200/50 dark:divide-white/5">
+                        @for (usr of usersList(); track usr.id) {
+                          <tr class="hover:bg-slate-50/50 dark:hover:bg-white/[0.01] transition-colors">
+                            <td class="p-4 font-bold text-slate-950 dark:text-white">{{ usr.name }}</td>
+                            <td class="p-4 font-mono">{{ usr.username }}</td>
+                            <td class="p-4">{{ usr.email }}</td>
+                            <td class="p-4">
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight"
+                                [ngClass]="{
+                                  'bg-primary/10 text-primary': usr.role === 'Admin',
+                                  'bg-blue-500/10 text-blue-500': usr.role === 'Agent',
+                                  'bg-slate-200 text-slate-600 dark:bg-white/5 dark:text-slate-400': usr.role === 'Customer'
+                                }">
+                                {{ usr.role }}
+                              </span>
+                            </td>
+                            <td class="p-4">
+                              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight"
+                                [ngClass]="{
+                                  'bg-emerald-500/10 text-emerald-500': usr.status === 'Active',
+                                  'bg-rose-500/10 text-rose-500': usr.status === 'Suspended'
+                                }">
+                                {{ usr.status }}
+                              </span>
+                            </td>
+                            <td class="p-4 font-bold">
+                              {{ usr.two_factor_enabled ? 'Active' : 'Off' }}
+                            </td>
+                            <td class="p-4 text-right">
+                              <button
+                                (click)="editUser(usr)"
+                                class="px-3 py-1.5 bg-primary hover:bg-primary/95 text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all"
+                              >
+                                Edit Profile
+                              </button>
+                            </td>
+                          </tr>
+                        } @empty {
+                          <tr>
+                            <td colspan="7" class="p-8 text-center text-slate-400 italic">No users found.</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Inline edit modal when a user is selected -->
+                  @if (selectedUserForEdit()) {
+                    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                      <!-- Backdrop -->
+                      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="selectedUserForEdit.set(null)"></div>
+                      
+                      <!-- Modal Panel -->
+                      <div class="bg-white dark:bg-dark-surface border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-200 p-6 sm:p-8 rounded-3xl shadow-2xl relative w-full max-w-lg z-10 animate-fade-in">
+                        <div class="flex justify-between items-center mb-6">
+                          <div>
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest">
+                              Modify Account: {{ selectedUserForEdit()?.username }}
+                            </h4>
+                            <p class="text-[9px] text-slate-400 uppercase tracking-widest mt-0.5">
+                              Update user attributes and set credentials
+                            </p>
+                          </div>
+                          <button (click)="selectedUserForEdit.set(null)" class="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                          </button>
+                        </div>
+
+                        <form [formGroup]="adminEditForm" (ngSubmit)="saveAdminUserChanges()" class="space-y-6">
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                            <div class="floating-input-group">
+                              <input type="text" formControlName="name" placeholder=" " class="floating-input" id="edit-name" />
+                              <label class="floating-label" for="edit-name">Full Name</label>
+                            </div>
+                            <div class="floating-input-group">
+                              <input type="email" formControlName="email" placeholder=" " class="floating-input" id="edit-email" />
+                              <label class="floating-label" for="edit-email">Email Address</label>
+                            </div>
+                            <div class="floating-input-group">
+                              <input type="text" formControlName="company" placeholder=" " class="floating-input" id="edit-company" />
+                              <label class="floating-label" for="edit-company">Company</label>
+                            </div>
+                            <div class="floating-input-group">
+                              <input type="password" formControlName="password" placeholder=" " class="floating-input" id="edit-password" />
+                              <label class="floating-label" for="edit-password">Reset Password (Optional)</label>
+                            </div>
+                          </div>
+
+                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                            <!-- Role Dropdown -->
+                            <div class="space-y-1 text-left">
+                              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">System Role</span>
+                              <select formControlName="role" class="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-2.5 rounded-xl text-xs font-bold focus:outline-none dark:text-white">
+                                <option value="Admin">Admin</option>
+                                <option value="Agent">Agent</option>
+                                <option value="Customer">Customer</option>
+                              </select>
+                            </div>
+                            <!-- Status Dropdown -->
+                            <div class="space-y-1 text-left">
+                              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Account Status</span>
+                              <select formControlName="status" class="w-full bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-2.5 rounded-xl text-xs font-bold focus:outline-none dark:text-white">
+                                <option value="Active">Active</option>
+                                <option value="Suspended">Suspended</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200/50 dark:border-white/5">
+                            <button type="button" (click)="selectedUserForEdit.set(null)" class="px-5 py-2.5 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-colors">
+                              Cancel
+                            </button>
+                            <button type="submit" [disabled]="adminEditForm.invalid" class="btn-primary-premium">
+                              Save Profile
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
           </div>
+
         </div>
       </div>
     </div>
@@ -1369,38 +1695,48 @@ import {
   `,
 })
 export class SettingsComponent {
-  tabs = [
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>',
-    },
-    {
-      id: 'roles',
-      label: 'Access Control',
-      icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>',
-    },
-    {
-      id: 'security',
-      label: 'Security',
-      icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>',
-    },
-    {
-      id: 'appearance',
-      label: 'Appearance',
-      icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>',
-    },
-    {
-      id: 'notifications',
-      label: 'Notifications',
-      icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>',
-    },
-    {
-      id: 'workspaces',
-      label: 'Workspaces',
-      icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>',
-    },
-  ];
+  tabs = computed(() => {
+    const list = [
+      {
+        id: 'profile',
+        label: 'Profile',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>',
+      },
+      {
+        id: 'roles',
+        label: 'Access Control',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>',
+      },
+      {
+        id: 'security',
+        label: 'Security',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>',
+      },
+      {
+        id: 'appearance',
+        label: 'Appearance',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>',
+      },
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>',
+      },
+      {
+        id: 'workspaces',
+        label: 'Workspaces',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>',
+      },
+    ];
+    if (this.auth.isAdmin()) {
+      list.push({
+        id: 'users',
+        label: 'User Management',
+        icon: '<svg class="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>',
+      });
+    }
+    return list;
+  });
 
   activeTab = signal('profile');
   newRoleName = signal('');
@@ -1428,6 +1764,24 @@ export class SettingsComponent {
   healthData = signal<any>(null);
   isRefreshingHealth = signal(false);
 
+  // Advanced User Management Signals & Form
+  usersList = signal<any[]>([]);
+  selectedUserForEdit = signal<any | null>(null);
+
+  adminEditForm = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    role: ['Customer', Validators.required],
+    status: ['Active', Validators.required],
+    company: [''],
+    password: [''],
+  });
+
+  // 2FA setups
+  is2faSetupActive = signal(false);
+  twoFactorSetupData = signal<{ secret: string; qrCodeUrl: string } | null>(null);
+  twoFactorCode = signal('');
+
   // Fuzzy autocomplete computed roles list
   filteredRoles = computed(() => {
     const q = this.roleSearchQuery().toLowerCase().trim();
@@ -1443,6 +1797,13 @@ export class SettingsComponent {
         this.isPreviewLoading.set(true);
       }, 2000);
     }, 4000);
+
+    // Watch active tab change reactively
+    effect(() => {
+      if (this.activeTab() === 'users') {
+        this.loadUsers();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -1453,7 +1814,7 @@ export class SettingsComponent {
     // Deep link support for tabs via query parameters
     this.route.queryParamMap.subscribe((params) => {
       const tabId = params.get('tab');
-      if (tabId && this.tabs.some((t) => t.id === tabId)) {
+      if (tabId && this.tabs().some((t) => t.id === tabId)) {
         this.activeTab.set(tabId);
       }
     });
@@ -1513,7 +1874,7 @@ export class SettingsComponent {
   // --- Real-time Gateway Health Probe ---
   loadHealth() {
     this.isRefreshingHealth.set(true);
-    this.http.get<any>('http://localhost:3000/health').subscribe({
+    this.http.get<any>(environment.healthUrl).subscribe({
       next: (data) => {
         this.healthData.set(data);
         this.isRefreshingHealth.set(false);
@@ -1815,6 +2176,101 @@ export class SettingsComponent {
     const value = (event.target as HTMLInputElement).value;
     this.notificationService.updateConfig({ duration: parseInt(value, 10) });
     this.userSettingsService.markDirty();
+  }
+
+  // --- 2FA Authentication Setup and Verification ---
+  start2FaSetup() {
+    this.http.post<any>(`${environment.apiUrl}/auth/2fa/setup`, {}, { withCredentials: true }).subscribe({
+      next: (data) => {
+        this.twoFactorSetupData.set({
+          secret: data.secret,
+          qrCodeUrl: data.qr_code_url,
+        });
+        this.is2faSetupActive.set(true);
+      },
+      error: () => this.notificationService.error('Error', 'Failed to initialize 2FA setup.'),
+    });
+  }
+
+  confirm2Fa() {
+    if (!this.twoFactorCode().trim()) {
+      this.notificationService.warning('Required', 'Please enter a 6-digit code.');
+      return;
+    }
+    this.http
+      .post<any>(`${environment.apiUrl}/auth/2fa/verify`, { code: this.twoFactorCode() }, { withCredentials: true })
+      .subscribe({
+        next: () => {
+          const u = this.auth.user();
+          if (u) u.twoFactorEnabled = true;
+          this.notificationService.success('2FA Activated', 'Two-factor authentication successfully enabled!');
+          this.is2faSetupActive.set(false);
+          this.twoFactorSetupData.set(null);
+          this.twoFactorCode.set('');
+        },
+        error: (err) => this.notificationService.error('Verification Failed', err.error?.detail || 'Invalid code.'),
+      });
+  }
+
+  disable2Fa() {
+    if (!this.twoFactorCode().trim()) {
+      this.notificationService.warning('Required', 'Please enter a verification code.');
+      return;
+    }
+    this.http
+      .post<any>(`${environment.apiUrl}/auth/2fa/disable`, { code: this.twoFactorCode() }, { withCredentials: true })
+      .subscribe({
+        next: () => {
+          const u = this.auth.user();
+          if (u) u.twoFactorEnabled = false;
+          this.notificationService.success('2FA Disabled', 'Two-factor authentication successfully disabled.');
+          this.twoFactorCode.set('');
+        },
+        error: (err) => this.notificationService.error('Failed to disable 2FA', err.error?.detail || 'Invalid code.'),
+      });
+  }
+
+  // --- Advanced Admin User Management Operations ---
+  loadUsers() {
+    this.http.get<any[]>(`${environment.apiUrl}/user/list`, { withCredentials: true }).subscribe({
+      next: (data) => this.usersList.set(data),
+      error: () => this.notificationService.error('Error', 'Failed to load system users.'),
+    });
+  }
+
+  editUser(user: any) {
+    this.selectedUserForEdit.set(user);
+    this.adminEditForm.patchValue({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      company: user.company || '',
+      password: '',
+    });
+  }
+
+  saveAdminUserChanges() {
+    const user = this.selectedUserForEdit();
+    if (!user || this.adminEditForm.invalid) return;
+    const payload = {
+      name: this.adminEditForm.value.name,
+      email: this.adminEditForm.value.email,
+      role: this.adminEditForm.value.role,
+      status: this.adminEditForm.value.status,
+      company: this.adminEditForm.value.company || '',
+      password: this.adminEditForm.value.password || null,
+    };
+    this.http
+      .put<any>(`${environment.apiUrl}/user/admin-update/${user.id}`, payload, { withCredentials: true })
+      .subscribe({
+        next: () => {
+          this.notificationService.success('User Updated', `Successfully updated user profile for ${user.username}`);
+          this.selectedUserForEdit.set(null);
+          this.loadUsers();
+        },
+        error: (err) => this.notificationService.error('Update Failed', err.error?.detail || 'Failed to update user.'),
+      });
   }
 
   testUrgent() {

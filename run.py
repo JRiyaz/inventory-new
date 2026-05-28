@@ -1,13 +1,6 @@
 import uvicorn
 
-from app import app, config
-
-__all__ = ["app"]
-
-# # Dynamically add the app/ directory to sys.path so modules resolve correctly on boot
-# APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "app"))
-# if APP_DIR not in sys.path:
-#     sys.path.insert(0, APP_DIR)
+from app import config
 
 
 def main():

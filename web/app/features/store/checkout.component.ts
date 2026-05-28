@@ -8,6 +8,7 @@ import { RouterLink } from '@angular/router';
 import {
   AuthStateService,
   AutocompleteComponent,
+  environment,
   InventoryDataService,
   LoaderComponent,
   NotificationService,
@@ -734,7 +735,7 @@ export class CheckoutComponent {
         this.orderId.set(orderIdVal);
 
         // Generate sanitized live invoice receipt URL (direct from store-service)
-        const rawUrl = `http://localhost:3000/api/orders/${orderIdVal}/invoice`;
+        const rawUrl = `${environment.apiUrl}/orders/${orderIdVal}/invoice`;
         this.invoiceUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl));
 
         this.success.set(true);

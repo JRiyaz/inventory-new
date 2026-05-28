@@ -28,6 +28,7 @@ export * from './components/typewriter/typewriter.component';
 export * from './components/ui-chart/ui-chart.component';
 export * from './directives/form-validation.directive';
 export * from './directives/has-permission.directive';
+export * from './environment';
 export * from './guards/auth.guard';
 export * from './http-interceptors/index';
 export * from './models';

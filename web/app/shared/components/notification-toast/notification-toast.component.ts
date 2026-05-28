@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
 
 @Component({
@@ -32,6 +33,8 @@ import { NotificationService } from '../../services/notification.service';
     >
       @for (toast of notificationService.activeToasts(); track toast.id) {
         <div
+          (click)="onToastClick(toast)"
+          [class.cursor-pointer]="toast.link"
           class="pointer-events-auto flex items-start gap-3 p-4 rounded-2xl border shadow-lg backdrop-blur-md transition-all duration-300 relative group"
           [style.animation]="
             (notificationService.config().placement.includes('right')
@@ -172,4 +175,12 @@ import { NotificationService } from '../../services/notification.service';
 })
 export class NotificationToastComponent {
   notificationService = inject(NotificationService);
+  private router = inject(Router);
+
+  onToastClick(toast: any) {
+    if (toast.link) {
+      this.router.navigateByUrl(toast.link);
+      this.notificationService.removeToast(toast.id);
+    }
+  }
 }

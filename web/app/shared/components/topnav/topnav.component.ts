@@ -819,5 +819,8 @@ export class TopnavComponent implements OnInit {
   confirmSync(): void {
     this.showSyncConfirm.set(false);
     this.loadingService.simulateLoading(2500, 'Synchronizing Platform Data...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 2500);
   }
 }

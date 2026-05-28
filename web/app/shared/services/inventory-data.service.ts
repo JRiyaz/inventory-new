@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { environment } from '../environment';
 import type {
   Customer,
   Offer,
@@ -16,7 +17,7 @@ import type {
 })
 export class InventoryDataService {
   loading = signal(false);
-  baseUrl = 'http://localhost:3000/api';
+  baseUrl = environment.apiUrl;
 
   settings = signal({
     currency: 'USD',

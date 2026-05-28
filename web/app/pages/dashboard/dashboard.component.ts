@@ -2,7 +2,13 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { DraggableDirective, DroppableDirective, NotificationService, TypewriterComponent } from 'ui-shared';
+import {
+  DraggableDirective,
+  DroppableDirective,
+  environment,
+  NotificationService,
+  TypewriterComponent,
+} from 'ui-shared';
 
 @Component({
   selector: 'app-dashboard',
@@ -240,7 +246,7 @@ export class DashboardComponent {
   }
 
   refreshHealth() {
-    this.http.get<any>('http://localhost:3000/health').subscribe({
+    this.http.get<any>(environment.healthUrl).subscribe({
       next: (data) => {
         this.healthData.set(data);
       },

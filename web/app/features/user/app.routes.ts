@@ -17,6 +17,12 @@ export const USER_ROUTES: Routes = [
     component: RegisterComponent,
   },
   {
+    path: 'forgot-password',
+    title: 'Forgot Password - Inventory',
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password.component').then((m) => m.ForgotPasswordComponent),
+  },
+  {
     path: 'settings',
     title: 'Settings - Inventory',
     component: SettingsComponent,

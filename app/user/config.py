@@ -20,5 +20,13 @@ class Settings(BaseSettings):
     RATE_LIMIT_REQUESTS: int = 60
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
+    # Email & SMTP Configurations
+    EMAIL_ENABLED: bool = True
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_SENDER: str = "noreply@inventory.com"
+
 
 settings = Settings()

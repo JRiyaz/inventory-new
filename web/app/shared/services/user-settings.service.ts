@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { catchError, firstValueFrom, of } from 'rxjs';
+import { environment } from '../environment';
 import { AuthStateService } from './auth-state.service';
 import { DisplayImageService } from './display-image.service';
 import { NotificationService } from './notification.service';
@@ -15,6 +16,7 @@ export interface BackendUserSettings {
   urgent_persistence: boolean;
   notification_duration: number;
   notification_placement: string;
+  email_alerts: boolean;
 }
 
 export interface RolePermission {
@@ -25,7 +27,7 @@ export interface RolePermission {
   can_delete: boolean;
 }
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class UserSettingsService {
@@ -45,6 +47,8 @@ export class UserSettingsService {
   readonly allRolePermissions = signal<RolePermission[]>([]);
   /** True if saving permissions */
   readonly isSavingPermissions = signal(false);
+  /** Email Alerts setting state */
+  readonly emailAlerts = signal(true);
 
   /**
    * Fetch user settings from the backend and apply to all UI services.
@@ -67,6 +71,7 @@ export class UserSettingsService {
           username: profile.username,
           roles: [profile.role],
           avatarUrl: profile.avatar_url || '',
+          twoFactorEnabled: profile.two_factor_enabled,
         });
 
         // 2. Load and apply settings
@@ -85,6 +90,8 @@ export class UserSettingsService {
           this.themeService.setLoaderDuration(settings.animation_tempo);
           // Apply display images
           this.displayImageService.setDisplayImage(settings.display_images);
+          // Apply email alerts
+          this.emailAlerts.set(settings.email_alerts !== false);
           // Apply notification config
           this.notificationService.updateConfig({
             dnd: settings.dnd,
@@ -152,6 +159,7 @@ export class UserSettingsService {
       urgent_persistence: this.notificationService.config().urgentStick,
       notification_duration: this.notificationService.config().duration,
       notification_placement: this.notificationService.config().placement,
+      email_alerts: this.emailAlerts(),
     };
   }
 

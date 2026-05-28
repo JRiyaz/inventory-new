@@ -1,7 +1,7 @@
 import random
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import select
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlmodel import func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..database import get_db
@@ -22,29 +22,57 @@ from ..schemas.po import (
 )
 from ..utils.dependencies import AuthenticatedUser, RoleChecker
 
-router = APIRouter(prefix="/po", tags=["Purchase Orders & Procurement"])
+router = APIRouter(prefix="/purchaseOrders", tags=["Purchase Orders & Procurement"])
 
 
 @router.get("", response_model=list[PurchaseOrderResponse])
-async def list_purchase_orders(page: int = 1, limit: int = 10, db: AsyncSession = Depends(get_db)):
+async def list_purchase_orders(
+    response: Response,
+    page: int = 1,
+    _page: int = 1,
+    limit: int = 10,
+    _limit: int = 10,
+    _sort: str | None = None,
+    _order: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
     """
     Returns all purchase orders in the system (paginated).
     Includes their detailed items.
     """
-    offset = (page - 1) * limit
-    result = await db.execute(select(PurchaseOrder).offset(offset).limit(limit))
+    active_page = page if page != 1 else _page
+    active_limit = limit if limit != 10 else _limit
+
+    query = select(PurchaseOrder)
+    count_query = select(func.count()).select_from(PurchaseOrder)
+
+    if _sort == "date":
+        if _order == "desc":
+            query = query.order_by(PurchaseOrder.created_at.desc())
+        else:
+            query = query.order_by(PurchaseOrder.created_at.asc())
+
+    total_count_res = await db.execute(count_query)
+    total_count = total_count_res.scalar_one()
+
+    offset = (active_page - 1) * active_limit
+    query = query.offset(offset).limit(active_limit)
+    result = await db.execute(query)
     pos = result.scalars().all()
 
-    response = []
+    res_list = []
     for po in pos:
         item_res = await db.execute(select(PurchaseOrderItem).where(PurchaseOrderItem.po_id == po.id))
         items = item_res.scalars().all()
 
         po_dict = PurchaseOrderResponse.model_validate(po)
         po_dict.items = [PurchaseOrderItemResponse.model_validate(item) for item in items]
-        response.append(po_dict)
+        res_list.append(po_dict)
 
-    return response
+    response.headers["X-Total-Count"] = str(total_count)
+    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
+
+    return res_list
 
 
 @router.get("/{po_id}", response_model=PurchaseOrderResponse)

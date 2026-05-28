@@ -3,7 +3,7 @@ from sqlmodel import or_, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..database import get_db
-from ..models.domain import Product
+from ..models.domain import Product, StockLevel
 from ..schemas.product import ProductCreate, ProductResponse, ProductUpdate
 from ..utils.dependencies import RoleChecker
 
@@ -37,7 +37,21 @@ async def list_products(
 
     query = query.offset(offset).limit(limit)
     result = await db.execute(query)
-    return result.scalars().all()
+    products = result.scalars().all()
+
+    # Dynamic stock aggregation query for current list of products
+    response_products = []
+    for product in products:
+        stock_query = select(StockLevel).where(StockLevel.product_id == product.id)
+        stock_result = await db.execute(stock_query)
+        stock_levels = stock_result.scalars().all()
+        total_stock = sum(level.quantity for level in stock_levels)
+
+        product_data = ProductResponse.model_validate(product)
+        product_data.stock = total_stock
+        response_products.append(product_data)
+
+    return response_products
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
@@ -49,7 +63,15 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    return product
+
+    stock_query = select(StockLevel).where(StockLevel.product_id == product.id)
+    stock_result = await db.execute(stock_query)
+    stock_levels = stock_result.scalars().all()
+    total_stock = sum(level.quantity for level in stock_levels)
+
+    response = ProductResponse.model_validate(product)
+    response.stock = total_stock
+    return response
 
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)

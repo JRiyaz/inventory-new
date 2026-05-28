@@ -1,4 +1,7 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { computed, Injectable, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { environment } from '../environment';
 
 export interface UserProfile {
   id?: number;
@@ -7,6 +10,7 @@ export interface UserProfile {
   username?: string;
   roles: string[];
   avatarUrl: string;
+  twoFactorEnabled?: boolean;
 }
 
 export interface UserPermissions {
@@ -35,6 +39,8 @@ const DEFAULT_PERMISSIONS: UserPermissions = {
   providedIn: 'root',
 })
 export class AuthStateService {
+  private http = inject(HttpClient);
+  private router = inject(Router);
   private readonly _isLoggedIn = signal(false);
   private readonly _availableRoles = signal<string[]>(['Admin', 'Agent', 'Customer']);
   private readonly _user = signal<UserProfile | null>(null);
@@ -135,10 +141,21 @@ export class AuthStateService {
     this._isLoggedIn.set(true);
   }
 
-  /** Simulate logout */
   logout(): void {
-    this._user.set(null);
-    this._isLoggedIn.set(false);
+    this.http.post(`${environment.apiUrl}/auth/logout`, {}, { withCredentials: true }).subscribe({
+      next: () => {
+        this._user.set(null);
+        this._isLoggedIn.set(false);
+        this.router.navigate(['/user/login']);
+      },
+      error: (err) => {
+        console.error('Failed to log out from backend', err);
+        // Fallback: still log out locally so user isn't stuck
+        this._user.set(null);
+        this._isLoggedIn.set(false);
+        this.router.navigate(['/user/login']);
+      },
+    });
   }
 
   /** Toggle login for demo purposes */

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, Injectable, inject, signal } from '@angular/core';
-import { firstValueFrom, from, Observable, tap } from 'rxjs';
+import { finalize, Observable, tap } from 'rxjs';
 import { InventoryDataService, type PurchaseOrder } from 'ui-shared';
 
 @Injectable({
@@ -130,27 +130,27 @@ export class ProcurementService {
     return this.dataService.suppliers().find((s) => s.id === id);
   }
 
-  addPurchaseOrder(order: PurchaseOrder) {
+  addPurchaseOrder(order: PurchaseOrder): Observable<PurchaseOrder> {
     this.isActionLoading.set(true);
-    const promise = firstValueFrom(
-      this.http.post<PurchaseOrder>(`${this.dataService.baseUrl}/purchaseOrders`, order),
-    ).then((data) => {
-      this.dataService.setPurchaseOrders([...this.dataService.purchaseOrders(), data]);
-    });
-    return from(promise).pipe(tap(() => this.isActionLoading.set(false)));
+    return this.http.post<PurchaseOrder>(`${this.dataService.baseUrl}/purchaseOrders`, order).pipe(
+      tap((data) => {
+        this.dataService.setPurchaseOrders([...this.dataService.purchaseOrders(), data]);
+      }),
+      finalize(() => this.isActionLoading.set(false)),
+    );
   }
 
-  updatePurchaseOrder(order: PurchaseOrder): Observable<any> {
+  updatePurchaseOrder(order: PurchaseOrder): Observable<PurchaseOrder> {
     this.isActionLoading.set(true);
-    const promise = firstValueFrom(
-      this.http.put<PurchaseOrder>(`${this.dataService.baseUrl}/purchaseOrders/${order.id}`, order),
-    ).then((data) => {
-      const updatedList = this.dataService.purchaseOrders().map((o) => (o.id === data.id ? data : o));
-      this.dataService.setPurchaseOrders(updatedList);
-      const updatedSubList = this.purchaseOrders().map((o) => (o.id === data.id ? data : o));
-      this.purchaseOrders.set(updatedSubList);
-    });
-    return from(promise).pipe(tap(() => this.isActionLoading.set(false)));
+    return this.http.put<PurchaseOrder>(`${this.dataService.baseUrl}/purchaseOrders/${order.id}`, order).pipe(
+      tap((data) => {
+        const updatedList = this.dataService.purchaseOrders().map((o) => (o.id === data.id ? data : o));
+        this.dataService.setPurchaseOrders(updatedList);
+        const updatedSubList = this.purchaseOrders().map((o) => (o.id === data.id ? data : o));
+        this.purchaseOrders.set(updatedSubList);
+      }),
+      finalize(() => this.isActionLoading.set(false)),
+    );
   }
 
   getPurchaseOrder(id: string) {

@@ -42,3 +42,14 @@ class SalesPayment(SQLModel, table=True):
     transaction_reference: str | None = Field(default=None)
     status: str = Field(default="Completed", nullable=False)  # Completed, Failed, Refunded
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), nullable=False)
+
+
+class Offer(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    title: str = Field(nullable=False)
+    description: str | None = Field(default=None)
+    discount: float = Field(nullable=False)
+    category: str | None = Field(default=None)
+    product_id: int | None = Field(default=None, nullable=True, index=True)
+    expiry_date: str = Field(nullable=False)
+    color: str = Field(default="primary", nullable=False)

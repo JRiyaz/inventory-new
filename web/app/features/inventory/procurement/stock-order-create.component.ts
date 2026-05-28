@@ -681,8 +681,8 @@ export class StockOrderCreateComponent implements OnInit {
         items: this.orderItems(),
       };
 
-      this.service.updatePurchaseOrder(updatedOrder).subscribe(() => {
-        this.router.navigate(['/inventory/procurement', editId]);
+      this.service.updatePurchaseOrder(updatedOrder).subscribe((savedPO) => {
+        this.router.navigate(['/inventory/procurement', savedPO.id]);
       });
     } else {
       const order: PurchaseOrder = {
@@ -695,8 +695,8 @@ export class StockOrderCreateComponent implements OnInit {
         items: this.orderItems(),
       };
 
-      this.service.addPurchaseOrder(order).subscribe(() => {
-        this.router.navigate(['/inventory/procurement', order.id]);
+      this.service.addPurchaseOrder(order).subscribe((savedPO) => {
+        this.router.navigate(['/inventory/procurement', savedPO.id]);
       });
     }
   }
