@@ -1,27 +1,25 @@
-# -----------------------------
 # Stage 1: Build Angular frontend
-# -----------------------------
 FROM node:22-alpine AS frontend
 
 # Set working directory
-WORKDIR /web
+WORKDIR /ui
 
 # Install pnpm
 RUN npm install -g pnpm@11.1.2
 
 # Copy dependency files first for better caching
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY ui/package.json ui/pnpm-workspace.yaml ui/pnpm-lock.yaml ./
 
 # Install dependencies
 # Angular build requires devDependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy frontend source files
-COPY web ./web
-COPY public ./public
+COPY ui/web ./web
+COPY ui/public ./public
 
 # Copy Angular/TypeScript config files
-COPY tsconfig.json tsconfig.app.json tsconfig.spec.json angular.json .postcssrc.json ./
+COPY ui/tsconfig.json ui/tsconfig.app.json ui/tsconfig.spec.json ui/angular.json ui/.postcssrc.json ./
 
 # Build frontend
 RUN pnpm run build
@@ -71,7 +69,7 @@ ENV ENVIRONMENT=production
 WORKDIR /app
 
 # Copy built frontend files
-COPY --from=frontend /web/dist/inventory/browser ./dist/inventory/browser
+COPY --from=frontend /ui/dist/inventory/browser ./ui/dist/inventory/browser
 
 # Copy Python virtual environment
 COPY --from=backend /app/.venv /app/.venv

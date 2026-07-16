@@ -4,12 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: inventory
+    image: inventory-full:v1
     ports:
       - "3000:3000"
     env_file:
       - ".env"
     volumes:
       - ./data:/app/data
+      # - ./ui/dist/inventory/browser:/app/ui/dist/inventory/browser
+      # - ./ui/dist/inventory/browser:/app/ui/dist/inventory/browser
     restart: unless-stopped
 
   # apache:

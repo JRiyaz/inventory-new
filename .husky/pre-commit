@@ -3,7 +3,7 @@ uv run ruff check . --fix
 uv run ruff format .
 
 echo "Running frontend (Biome)..."
-pnpm biome check . --write
+pnpm --prefix ui biome check . --write
 
 # If formatting changed tracked files, re-stage them so the commit includes the formatter output.
 git diff --name-only --diff-filter=ACM -z | xargs -0 git add --
